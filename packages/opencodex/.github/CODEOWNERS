@@ -1,0 +1,47 @@
+# Default reviewers
+* @dalsoop
+
+# High-impact runtime behavior
+/src/adapters/ @dalsoop
+/src/providers/ @dalsoop
+/src/codex/ @dalsoop
+/src/server/ @dalsoop
+
+# Repository automation and release security
+/.github/ @dalsoop
+/.coderabbit.yaml @dalsoop
+/.npmignore @dalsoop
+/bunfig.toml @dalsoop
+/scripts/release.ts @dalsoop
+/scripts/release-notes.ts @dalsoop
+/scripts/release-version-sources.ts @dalsoop
+/scripts/prepare-package.ts @dalsoop
+/package.json @dalsoop
+/bun.lock @dalsoop
+
+# Authentication, credentials, and management API
+/src/oauth/ @dalsoop
+/src/codex/auth-context.ts @dalsoop
+/src/server/auth-cors.ts @dalsoop
+/src/server/management-api.ts @dalsoop
+/src/lib/admin-secrets.ts @dalsoop
+/src/lib/service-secrets.ts @dalsoop
+/src/server/management-auth.ts @dalsoop
+
+# Governance and security policy
+/AGENTS.md @dalsoop
+**/AGENTS.md @dalsoop
+/MAINTAINERS.md @dalsoop
+/SECURITY.md @dalsoop
+
+# Proxy core boundary — owner approval required.
+# These four files carry every user's request path, including users of no optional
+# subsystem. Optional subsystems (Compatibility Lab and anything added later) register
+# into core-owned slots at activation instead of being imported here; the invariant is
+# enforced by tests/lab/core-lab-boundary.test.ts and designed in
+# devlog/_fin/260814_lab_core_decoupling/.
+# Last-match-wins: this block must stay below /src/server/ to take effect.
+/src/router.ts @lidge-jun
+/src/server/index.ts @lidge-jun
+/src/server/lifecycle.ts @lidge-jun
+/src/server/responses/core.ts @lidge-jun

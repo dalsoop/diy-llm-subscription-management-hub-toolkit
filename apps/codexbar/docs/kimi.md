@@ -1,0 +1,303 @@
+---
+summary: "Kimi provider notes: cookie auth, quotas, and rate-limit parsing."
+read_when:
+  - Adding or modifying the Kimi provider
+  - Debugging Kimi cookie import or usage parsing
+  - Adjusting Kimi menu labels or settings
+---
+
+# Kimi Code Provider
+
+Tracks usage for [Kimi For Coding](https://www.kimi.com/code) in CodexBar.
+
+Kimi Code is distinct from the Moonshot/Kimi Open Platform. China-issued Open Platform keys and balance
+belong under **Moonshot / Kimi Open Platform** with the China mainland region selected; they are not Kimi
+Code subscription credentials.
+
+## Features
+
+- Displays weekly request quota (from membership tier)
+- Shows current 5-hour rate limit usage
+- Displays membership from the API/CLI usage response, with the active web subscription title as a fallback
+- Detects the installed Kimi CLI version, including standalone installs outside the GUI app PATH
+- Enriches Code API/CLI usage with the monthly membership pool when a web session is available
+- Automatic menu-bar usage prioritizes an exhausted monthly Total usage pool over reset Code windows; explicit window selections remain authoritative
+- When a known monthly Total usage pool is exhausted, the menu card marks shorter Code windows as blocked by the monthly limit and omits their pace forecasts. Raw API percentages and explicit menu-bar selections remain available; unknown or expired monthly limits do not block the card.
+- API-key, Kimi Code CLI, automatic cookie, and manual cookie authentication methods
+- Multiple labeled web accounts through the shared token-account editor
+- Automatic refresh countdown
+
+## Setup
+
+Select **Region** in Settings → Providers → Kimi before configuring credentials. **China (kimi.com)** is
+the default, preserving existing installs; **International (kimi.ai)** selects the overseas service.
+The selection controls Code API requests, web membership requests, browser/Desktop cookie discovery,
+Open Console, and Usage Dashboard. Use an API key or manual token issued for the selected region.
+
+The app and CLI share the `providers[].region` config key:
+
+```json
+{"id":"kimi","region":"international","source":"api","apiKey":"<REDACTED>"}
+```
+
+Use `"china"` for China or omit `region` to keep the default. The regional Code bases are
+`https://api.kimi.com/coding/v1` and `https://api.kimi.ai/coding/v1`; consoles are
+`https://www.kimi.com/code/console` and `https://www.kimi.ai/code/console`.
+Examples below use China URLs; International uses the corresponding `kimi.ai` hosts.
+
+Choose one of four authentication methods:
+
+### Method 1: Kimi Code API Key (Recommended)
+
+Create an API key in the [Kimi Code Console](https://www.kimi.com/code/console), then save it in CodexBar:
+
+```bash
+codexbar config set-api-key --provider kimi --api-key "kimi-api-key-here"
+```
+
+Or provide it through the environment:
+
+```bash
+export KIMI_CODE_API_KEY="kimi-code-api-key-here"
+```
+
+CodexBar calls `GET https://api.kimi.com/coding/v1/usages` with the API key. Set
+`KIMI_CODE_BASE_URL` only when testing a compatible HTTPS proxy or alternate host with an explicit API key.
+CodexBar never forwards a Kimi Code CLI credential to an endpoint override or to the International host.
+
+Both the older count-based response and the newer `usages` ratio pools are supported. Ratio pools supply
+the 5-hour, weekly, and monthly Total usage windows they provide. When reliable legacy counts describe
+the same duration and reset time (within two seconds), the more-exhausted reading wins, even when a
+monthly pool is present or weekly counts are absent. Equal readings retain the ratio pool's precision
+and metadata; mismatched or unknown reset periods never borrow counts. Missing windows stay absent,
+and ratio percentages do not imply request counts. The monthly Total usage pool is available directly
+from the Code API in the menu and CLI output, without requiring browser authentication; optional web
+enrichment cannot replace it. Legacy rate-limit counts remain available when no 5-hour ratio is reported.
+Numeric legacy fields outside the integer range decode safely; unusable request counts do not create quota windows.
+
+### Method 2: Kimi Code CLI
+
+In the default China region, if you are signed in with the official Kimi Code CLI, Auto mode can reuse its fresh access token from
+`~/.kimi-code/credentials/kimi-code.json`. CodexBar sends the same device identity headers as the CLI,
+including the local hostname, OS details, and stable `~/.kimi-code/device_id` value. If that device ID is
+missing, CodexBar creates it with private file permissions to match the official client.
+
+CodexBar treats CLI-owned authentication as read-only: it never uses the refresh token and never rewrites
+the credential file. Kimi rotates refresh tokens, so refreshing only in CodexBar's memory could invalidate
+the CLI's saved token; writing it back could race with the CLI's own renewal. The official CLI coordinates
+renewal and persists the replacement credential itself.
+
+CLI access tokens are short-lived. For a 15-minute token, CodexBar's 60-second safety margin means it
+becomes stale after 14 minutes without CLI renewal. Run `kimi` to renew it (sign in if the CLI asks), then
+refresh CodexBar. The next fetch rereads the file; restarting CodexBar is unnecessary. Auto mode tries
+configured web authentication when the CLI credential is stale or rejected, and prefers a configured API
+key before the CLI. For unattended use, add a Kimi Code API key in **Settings → Providers → Kimi** or set
+`KIMI_CODE_API_KEY`. Set `KIMI_CODE_HOME` only when the official CLI uses a non-default home directory.
+
+Custom `KIMI_CODE_BASE_URL`, `KIMI_CODE_OAUTH_HOST`, and `KIMI_OAUTH_HOST` values disable CLI credential
+reuse; use an explicit API key for endpoint-override testing.
+The current CLI credential file does not identify its issuing host, so switching to International disables
+automatic CLI credential reuse. Configure an International API key or use a `kimi.ai` web session instead.
+
+### Method 3: Automatic Browser Import
+
+**No setup needed!** If you're already logged in to Kimi in Arc, Chrome, Safari, Edge, Brave, or Chromium:
+
+1. Open CodexBar settings → Providers → Kimi
+2. Set "Cookie source" to "Automatic"
+3. Enable the Kimi provider toggle
+4. CodexBar will automatically find your session
+
+Automatic mode prefers the current China Kimi Desktop access token from its primary Local Storage profile.
+Expired or invalid desktop JWTs are skipped; if the server rejects a desktop session, the Web source
+continues through browser profiles instead of stopping.
+Explicit manual tokens remain authoritative. API-key and CLI quota responses include the membership level, so displaying the tier does not require
+browser access. A web session can supply a subscription title when the usage response omits membership;
+a membership lookup failure does not fail the quota query. Quota statistics and the optional plan title
+load independently within a shared two-second enrichment budget; a slow title cannot discard completed
+monthly or Code 7-day statistics. Cancellation stops automatic retries before further browser reads.
+
+**Note**: Requires Full Disk Access to read browser cookies (System Settings → Privacy & Security → Full Disk Access → CodexBar).
+
+For China, Desktop discovery reads only the exact `https://www.kimi.com` / `access_token` record in
+`~/Library/Application Support/kimi-desktop/Local Storage/leveldb`. The shared reader follows the current
+LevelDB manifest and sequence numbers, honors deletions, and rejects incomplete or changing reads and
+symlinked profile paths. Only a bare, unexpired access JWT with the `kimi.com` audience is accepted.
+CodexBar does not scan historical tokens, import refresh tokens, or fall back to old China Desktop cookies.
+
+The acquired Desktop session is checked again before each web request. A deleted, replaced, expired,
+or unreadable session stops further requests with that credential. Confirm the intended account in
+Kimi Desktop and refresh CodexBar to acquire it again. Successful Code API or CLI quota results remain
+available when this optional membership enrichment is unavailable. These local checks do not verify JWT
+signatures or revoke requests already sent; the Kimi service authenticates the token.
+
+International retains its existing read-only Desktop cookie discovery; International Desktop Local Storage
+is not imported. Its Cookies database uses WAL-aware SQLite reads, with an immutable fallback for idle
+WAL-mode databases that have no sidecars. CodexBar never creates or modifies Desktop database files.
+
+For the selected region, Automatic mode also reads `access_token` from Chromium browser local storage
+through the shared browser catalog after cookie discovery. Tokens stay bound to the selected Kimi origin;
+expired or malformed tokens are skipped. CodexBar never reads or refreshes browser refresh tokens. Open
+Kimi in your browser to renew an expired session, or use a Kimi Code API key for unattended use.
+Safari and Firefox local storage are not imported.
+
+### Method 4: Manual Token Entry
+
+For advanced users or when automatic import fails:
+
+1. Open CodexBar settings → Providers → Kimi
+2. Set "Cookie source" to "Manual"
+3. Visit `https://www.kimi.com/code/console` in your browser
+4. Open Developer Tools (F12 or Cmd+Option+I)
+5. Go to **Application** → **Cookies**
+6. Copy the `kimi-auth` cookie value (JWT token). On kimi.ai, copy `access_token` from **Local Storage** instead.
+7. Paste it into the "Auth Token" field in CodexBar
+
+Manual mode never imports Desktop or browser credentials, including when the token field is empty or invalid.
+An explicit cookie environment variable can still supply the web token.
+
+### Multiple Web Accounts
+
+In Settings → Providers → Kimi, use **Kimi accounts** to add a label and either the `kimi-auth`
+token value or a Cookie header for each account. Select an account in the existing account list or
+use the shared multi-account display controls. The CLI supports `--account <label>`,
+`--account-index <index>`, and `--all-accounts` for the same saved accounts, including on Linux.
+Manual account cookies use HTTP directly and do not require browser-cookie import support.
+
+Saved accounts use the web usage source with their own manual cookie, even when **Usage source** is
+Auto or API key and **Cookie source** is Automatic or Off. These overrides apply only to the fetch;
+your saved source preferences and single-account credentials are preserved. Removing the final account
+restores those preferences. Invalid or expired account cookies fail for that account without importing
+another browser/Desktop session or falling back to an environment credential.
+
+All saved Kimi accounts use the provider's selected **Region**. Add accounts issued for that region;
+the account list does not support mixing China and International credentials. Accounts and labels use
+the existing `providers[].tokenAccounts` configuration, with no separate Kimi credential store.
+
+### Cookie Environment Variable
+
+Alternatively, set the `KIMI_AUTH_TOKEN` environment variable:
+
+```bash
+export KIMI_AUTH_TOKEN="jwt-token-here"
+```
+
+## Authentication Priority
+
+When multiple sources are available, CodexBar uses this order:
+
+1. API key (`providers[].apiKey` or `KIMI_CODE_API_KEY`) in Auto mode
+2. Fresh Kimi Code CLI access token (`~/.kimi-code/credentials/kimi-code.json`)
+3. Manual cookie/token (from Settings UI) when web fallback is used
+4. Cookie environment variable (`KIMI_AUTH_TOKEN`)
+5. Current China Kimi Desktop Local Storage access token (International retains its `kimi-auth` cookie)
+6. Browser cookies (Arc → Chrome → Safari → Edge → Brave → Chromium)
+7. Chromium local storage `access_token` for the selected region
+
+For Code API and CLI results, sources 3–7 are best-effort enrichment only: the required Code usage remains
+available if the membership request fails. Setting **Cookie source** to **Off** disables this enrichment and
+does not inspect Kimi Desktop or browser cookies.
+
+**Note**: Browser cookie import requires Full Disk Access permission.
+
+Setting **Cookie source** to **Off** prevents browser import on every Kimi path. Context-free token resolution is
+limited to explicit environment values; only the provider's settings-aware web strategy may inspect browsers.
+
+## API Details
+
+### Kimi Code API key
+
+**Endpoint**: `GET https://api.kimi.com/coding/v1/usages`
+
+**Authentication**: Bearer token (from `providers[].apiKey`, `KIMI_CODE_API_KEY`, or a fresh Kimi Code CLI credential)
+
+**Response**:
+```json
+{
+  "usage": {
+    "limit": "2048",
+    "used": "214",
+    "remaining": "1834",
+    "resetTime": "2026-01-09T15:23:13.716839300Z"
+  },
+  "limits": [{
+    "window": {"duration": 300, "timeUnit": "TIME_UNIT_MINUTE"},
+    "detail": {
+      "limit": "200",
+      "used": "139",
+      "remaining": "61",
+      "resetTime": "2026-01-06T13:33:02.717479433Z"
+    }
+  }]
+}
+```
+
+### Kimi web cookie fallback
+
+**Endpoint**: `POST https://www.kimi.com/apiv2/kimi.gateway.billing.v1.BillingService/GetUsages`
+
+**Authentication**: Bearer token (from `kimi-auth` cookie)
+
+**Response**:
+```json
+{
+  "usages": [{
+    "scope": "FEATURE_CODING",
+    "detail": {
+      "limit": "2048",
+      "used": "214",
+      "remaining": "1834",
+      "resetTime": "2026-01-09T15:23:13.716839300Z"
+    },
+    "limits": [{
+      "window": {"duration": 300, "timeUnit": "TIME_UNIT_MINUTE"},
+      "detail": {
+        "limit": "200",
+        "used": "139",
+        "remaining": "61",
+        "resetTime": "2026-01-06T13:33:02.717479433Z"
+      }
+    }]
+  }]
+}
+```
+
+## Membership Tiers
+
+| Tier | Price | Weekly Quota |
+|------|-------|--------------|
+| Andante | ¥49/month | 1,024 requests |
+| Moderato | ¥99/month | 2,048 requests |
+| Allegretto | ¥199/month | 7,168 requests |
+
+All tiers have a rate limit of 200 requests per 5 hours.
+
+## Troubleshooting
+
+### "Kimi auth token is missing"
+- Ensure "Cookie source" is set correctly
+- If using Automatic mode, verify you're logged in to Kimi in your browser
+- Grant Full Disk Access permission if using browser cookies
+- Try Manual mode and paste your token directly
+
+### "Kimi auth token is invalid or expired"
+- Your token has expired. Paste a new token from your browser
+- If using Automatic mode, log in to Kimi again in your browser
+
+### "Kimi Desktop session changed before the request was sent"
+- Confirm the intended account is signed in to Kimi Desktop, then refresh CodexBar.
+- The next refresh reads the current session again; no restart is needed.
+
+### "No Kimi session cookies found"
+- You're not logged in to Kimi in any supported browser
+- Grant Full Disk Access to CodexBar in System Settings
+
+### "Failed to parse Kimi usage data"
+- The API response format may have changed. Please report this issue.
+
+## Implementation
+
+- **Core files**: `Sources/CodexBarCore/Providers/Kimi/`
+- **UI files**: `Sources/CodexBar/Providers/Kimi/`
+- **Login flow**: `Sources/CodexBar/KimiLoginRunner.swift`
+- **Tests**: `Tests/CodexBarTests/KimiProviderTests.swift`

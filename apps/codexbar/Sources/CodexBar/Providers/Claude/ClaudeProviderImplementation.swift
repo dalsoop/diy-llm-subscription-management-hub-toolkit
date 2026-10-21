@@ -1,0 +1,494 @@
+import CodexBarCore
+import SwiftUI
+
+struct ClaudeProviderImplementation: ProviderImplementation {
+    let id: UsageProvider = .claude
+    let supportsLoginFlow: Bool = true
+
+    @MainActor
+    func presentation(context _: ProviderPresentationContext) -> ProviderPresentation {
+        ProviderPresentation { context in
+            var versionText = context.store.version(for: context.provider) ?? "not detected"
+            if let parenRange = versionText.range(of: "(") {
+                versionText = versionText[..<parenRange.lowerBound].trimmingCharacters(in: .whitespaces)
+            }
+            return "\(context.metadata.cliName) \(versionText)"
+        }
+    }
+
+    @MainActor
+    func observeSettings(_ settings: SettingsStore) {
+        _ = settings.claudeUsageDataSource
+        _ = settings.claudeWorkspaceSpendEnabled
+        _ = settings.claudeAdminAPIKey
+        _ = settings.claudeCookieSource
+        _ = settings.claudeDesktopCookiesEnabled
+        _ = settings.claudeCookieHeader
+        _ = settings.claudeOAuthKeychainPromptMode
+        _ = settings.claudeOAuthDirectKeychainReadAllowed
+        _ = settings.claudeOAuthKeychainReadStrategy
+        _ = settings.claudeWebExtrasEnabled
+        _ = settings.claudeSwapEnabled
+        _ = settings.claudeSwapShowSingleAccount
+        _ = settings.claudeSwapExecutablePath
+        _ = settings.claudeSwapSource
+        _ = settings.claudeSwapOpenCodexSnapshotPath
+    }
+
+    @MainActor
+    func settingsSnapshot(context: ProviderSettingsSnapshotContext) -> ProviderSettingsSnapshotContribution? {
+        .claude(context.settings.claudeSettingsSnapshot(tokenOverride: context.tokenOverride))
+    }
+
+    @MainActor
+    func tokenAccountsVisibility(context: ProviderSettingsContext, support: TokenAccountSupport) -> Bool {
+        guard support.requiresManualCookieSource else { return true }
+        if !context.settings.tokenAccounts(for: context.provider).isEmpty { return true }
+        return context.settings.claudeCookieSource == .manual
+    }
+
+    @MainActor
+    func applyTokenAccountCookieSource(settings: SettingsStore) {
+        if settings.claudeCookieSource != .manual {
+            settings.claudeCookieSource = .manual
+        }
+    }
+
+    func makeRuntime() -> (any ProviderRuntime)? {
+        ClaudeProviderRuntime()
+    }
+
+    @MainActor
+    func defaultSourceLabel(context: ProviderSourceLabelContext) -> String? {
+        context.settings.claudeUsageDataSource.rawValue
+    }
+
+    @MainActor
+    func sourceMode(context: ProviderSourceModeContext) -> ProviderSourceMode {
+        switch context.settings.claudeUsageDataSource {
+        case .auto: .auto
+        case .api: .api
+        case .oauth: .oauth
+        case .web: .web
+        case .cli: .cli
+        }
+    }
+
+    @MainActor
+    func settingsToggles(context: ProviderSettingsContext) -> [ProviderSettingsToggleDescriptor] {
+        let subtitle = if context.settings.debugDisableKeychainAccess {
+            "Inactive while \"Disable Keychain access\" is enabled in Advanced."
+        } else {
+            "Never allow Claude OAuth credential reads to show macOS Keychain prompts."
+        }
+
+        let promptFreeBinding = Binding(
+            get: { context.settings.claudeOAuthPromptFreeCredentialsEnabled },
+            set: { enabled in
+                guard !context.settings.debugDisableKeychainAccess else { return }
+                context.settings.claudeOAuthPromptFreeCredentialsEnabled = enabled
+            })
+
+        let claudeSwapBinding = context.binding(\.claudeSwapEnabled)
+        let claudeSwapShowSingleAccountBinding = context.binding(\.claudeSwapShowSingleAccount)
+        let claudeSwapSetup = ClaudeSwapSetupText(source: context.settings.claudeSwapSource)
+        let claudeSwapExecutableField = ProviderSettingsFieldDescriptor(
+            id: "claude-swap-executable-path",
+            title: claudeSwapSetup.title,
+            subtitle: claudeSwapSetup.subtitle,
+            kind: .plain,
+            placeholder: claudeSwapSetup.placeholder,
+            binding: context.binding(\.claudeSwapExecutablePath),
+            actions: [],
+            isVisible: nil)
+        let openCodexSnapshotField = ProviderSettingsFieldDescriptor(
+            id: "claude-swap-opencodex-snapshot-path",
+            title: "Hub snapshot file",
+            subtitle: "On a Mac that is not the hub, read the hub's accounts from this snapshot file; " +
+                "switch requests are written next to it.",
+            kind: .plain,
+            placeholder: "~/.swift-app-state/opencodex-hub-accounts.json",
+            binding: context.binding(\.claudeSwapOpenCodexSnapshotPath),
+            actions: [],
+            isVisible: { context.settings.claudeSwapSource == .openCodex })
+
+        return [
+            ProviderSettingsToggleDescriptor(
+                id: "claude-desktop-cookies",
+                title: "Use Claude desktop app cookies",
+                subtitle: "For Web usage, follow the account signed into Claude.app instead of a browser.",
+                binding: context.binding(\.claudeDesktopCookiesEnabled),
+                statusText: nil,
+                actions: [],
+                isVisible: { context.settings.claudeCookieSource == .auto },
+                isEnabled: nil,
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-workspace-spend",
+                title: "Show workspace spend",
+                subtitle: "Break down Admin API spend by workspace over the last 30 days.",
+                binding: context.binding(\.claudeWorkspaceSpendEnabled),
+                statusText: nil,
+                actions: [],
+                isVisible: nil,
+                isEnabled: nil,
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-model-scoped-weekly-usage-visible",
+                title: "Show model-specific weekly usage in widgets",
+                subtitle: "Shows model-specific Claude quotas, such as Fable, in desktop widgets.",
+                binding: context.binding(\.claudeModelScopedWeeklyUsageVisible),
+                statusText: nil,
+                actions: [],
+                isVisible: nil,
+                isEnabled: nil,
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-oauth-direct-keychain-read",
+                title: "Allow reading Claude Code's credentials",
+                subtitle: [
+                    "Reads Claude Code's Keychain item for OAuth usage; macOS may ask for permission.",
+                    "Off: CodexBar never touches Claude Code's credentials and uses the Claude CLI instead.",
+                ].joined(separator: " "),
+                binding: context.binding(\.claudeOAuthDirectKeychainReadAllowed),
+                statusText: nil,
+                actions: [],
+                isVisible: nil,
+                isEnabled: { !context.settings.debugDisableKeychainAccess },
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-oauth-prompt-free-credentials",
+                title: "Avoid Keychain prompts",
+                subtitle: subtitle,
+                binding: promptFreeBinding,
+                statusText: nil,
+                actions: [],
+                isVisible: nil,
+                isEnabled: { !context.settings.debugDisableKeychainAccess },
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-swap-accounts",
+                title: "Read accounts from claude-swap",
+                subtitle: claudeSwapSetup.toggleSubtitle,
+                binding: claudeSwapBinding,
+                statusText: { Self.claudeSwapStatusText(store: context.store, settings: context.settings) },
+                actions: [],
+                inlineFields: [claudeSwapExecutableField, openCodexSnapshotField],
+                isVisible: nil,
+                isEnabled: nil,
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+            ProviderSettingsToggleDescriptor(
+                id: "claude-swap-show-single-account",
+                title: "Show account card when only one account is available",
+                subtitle: "Prefer claude-swap over the ambient Claude account presentation.",
+                binding: claudeSwapShowSingleAccountBinding,
+                statusText: nil,
+                actions: [],
+                isVisible: { context.settings.claudeSwapEnabled },
+                isEnabled: nil,
+                onChange: nil,
+                onAppDidBecomeActive: nil,
+                onAppearWhenEnabled: nil),
+        ]
+    }
+
+    @MainActor
+    private static func claudeSwapStatusText(store: UsageStore, settings: SettingsStore) -> String? {
+        guard settings.claudeSwapEnabled else { return nil }
+        let hasPath = !settings.claudeSwapExecutablePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasHubSnapshot = settings.claudeSwapSource == .openCodex && !settings.claudeSwapOpenCodexSnapshotPath
+            .isEmpty
+        if !hasPath, !hasHubSnapshot {
+            return ClaudeSwapSetupText(source: settings.claudeSwapSource).missingPathStatus
+        }
+        var parts: [String] = []
+        if let version = store.claudeSwapDetectedVersion {
+            parts.append("\(settings.claudeSwapSource.label) \(version)")
+        }
+        if let error = store.claudeSwapLastError {
+            parts.append(error)
+        } else if let refreshedAt = store.claudeSwapLastRefreshAt {
+            let accounts = store.claudeSwapAccountSnapshots.count
+            let accountsText = accounts == 1 ? "1 account" : "\(accounts) accounts"
+            parts.append("\(accountsText), updated \(refreshedAt.relativeDescription())")
+            if let remoteCopy = store.claudeSwapRemoteCopy {
+                let hub = remoteCopy.managerName ?? "the hub"
+                parts.append(remoteCopy.isSwitchable
+                    ? "copy from \(hub), switches by request"
+                    : "read-only copy from \(hub)")
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " — ")
+    }
+
+    @MainActor
+    func settingsPickers(context: ProviderSettingsContext) -> [ProviderSettingsPickerDescriptor] {
+        let usageBinding = context.rawValueBinding(\.claudeUsageDataSource, fallback: .auto)
+        let keychainPromptPolicyBinding = context.rawValueBinding(
+            \.claudeOAuthKeychainPromptMode,
+            fallback: .onlyOnUserAction)
+
+        let usageOptions = ClaudeUsageDataSource.allCases.map {
+            ProviderSettingsPickerOption(id: $0.rawValue, title: $0.displayName)
+        }
+        let keychainPromptPolicyOptions: [ProviderSettingsPickerOption] = [
+            ProviderSettingsPickerOption(
+                id: ClaudeOAuthKeychainPromptMode.never.rawValue,
+                title: "Never prompt"),
+            ProviderSettingsPickerOption(
+                id: ClaudeOAuthKeychainPromptMode.onlyOnUserAction.rawValue,
+                title: "Only on user action"),
+            ProviderSettingsPickerOption(
+                id: ClaudeOAuthKeychainPromptMode.always.rawValue,
+                title: "Always allow prompts"),
+        ]
+        let keychainPromptPolicySubtitle: () -> String? = {
+            if context.settings.debugDisableKeychainAccess {
+                return "Global Keychain access is disabled in Advanced, so this setting is currently inactive."
+            }
+            return "Choosing \"Never prompt\" can make OAuth unavailable; use Web/CLI when needed."
+        }
+
+        return [
+            ProviderSettingsPickerDescriptor(
+                id: "claude-usage-source",
+                title: "Usage source",
+                subtitle: "Auto falls back to the next source if the preferred one fails.",
+                binding: usageBinding,
+                options: usageOptions,
+                isVisible: nil,
+                onChange: nil,
+                trailingText: {
+                    guard context.settings.claudeUsageDataSource == .auto else { return nil }
+                    let label = context.store.sourceLabel(for: .claude)
+                    return label == "auto" ? nil : label
+                }),
+            ProviderSettingsPickerDescriptor(
+                id: "claude-keychain-prompt-policy",
+                title: "Keychain prompt policy",
+                subtitle: "Controls when Claude OAuth may ask macOS for Keychain access.",
+                dynamicSubtitle: keychainPromptPolicySubtitle,
+                binding: keychainPromptPolicyBinding,
+                options: keychainPromptPolicyOptions,
+                isVisible: nil,
+                isEnabled: { !context.settings.debugDisableKeychainAccess },
+                onChange: nil),
+            ProviderSettingsPickerDescriptor(
+                id: "claude-swap-source",
+                title: "Source",
+                subtitle: "",
+                binding: context.rawValueBinding(\.claudeSwapSource, fallback: .defaultSource),
+                // Tool names, not prose: they stay untranslated in every locale.
+                options: ClaudeSwapAccountSource.allCases.map {
+                    ProviderSettingsPickerOption(id: $0.rawValue, title: $0.label)
+                },
+                isVisible: { context.settings.claudeSwapEnabled },
+                onChange: nil),
+            ProviderCookieSourceUI.picker(
+                id: "claude-cookie-source",
+                context: context,
+                source: \.claudeCookieSource,
+                allowsOff: false,
+                subtitles: {
+                    .init(
+                        auto: L("Automatic imports browser cookies for the web API."),
+                        manual: L("Paste a Cookie header from %@.", "a claude.ai request"),
+                        off: L("%@ cookies are disabled.", "Claude"))
+                },
+                title: "Claude cookies",
+                isVisible: nil,
+                onChange: nil,
+                trailingText: {
+                    if context.settings.claudeDesktopCookiesEnabled, context.settings.claudeCookieSource == .auto {
+                        return L("Claude desktop app")
+                    }
+                    return ProviderCookieSourceUI.cachedTrailingText(provider: .claude)
+                }),
+        ]
+    }
+
+    @MainActor
+    func settingsFields(context: ProviderSettingsContext) -> [ProviderSettingsFieldDescriptor] {
+        [
+            ProviderSettingsFieldDescriptor(
+                id: "claude-admin-api-key",
+                title: "Admin API key",
+                subtitle: "Stored in ~/.codexbar/config.json. Requires an Anthropic Admin API key.",
+                kind: .secure,
+                placeholder: "sk-ant-admin...",
+                binding: context.binding(\.claudeAdminAPIKey),
+                actions: [],
+                isVisible: nil),
+        ]
+    }
+
+    @MainActor
+    func runLoginFlow(context: ProviderLoginContext) async -> Bool {
+        await context.controller.runClaudeLoginFlow()
+    }
+
+    @MainActor
+    func appendUsageMenuEntries(context: ProviderMenuUsageContext, entries: inout [ProviderMenuEntry]) {
+        if context.snapshot?.secondary == nil {
+            entries.append(.text(L("Weekly usage unavailable for this account."), .secondary))
+        }
+
+        if let cost = context.snapshot?.providerCost,
+           context.settings.showOptionalCreditsAndExtraUsage,
+           cost.currencyCode != "Quota"
+        {
+            func formatCost(_ value: Double) -> String {
+                UsageFormatter.convertedCostString(
+                    value,
+                    preferredCurrency: context.settings.preferredCurrencyCode,
+                    providerCurrency: cost.currencyCode)
+            }
+            if cost.limit > 0 {
+                let used = formatCost(cost.used)
+                let limit = formatCost(cost.limit)
+                entries.append(.text(String(format: L("extra_usage_format"), used, limit), .primary))
+            }
+            if let balance = cost.balance {
+                let value = formatCost(balance)
+                let label = cost.limit > 0 ? L("Balance") : L("Credits")
+                entries.append(.text("\(label): \(value)", .primary))
+            }
+        }
+    }
+
+    @MainActor
+    func loginMenuAction(context: ProviderMenuLoginContext)
+        -> (label: String, action: MenuDescriptor.MenuAction)?
+    {
+        if self.shouldOfferDirectKeychainReadConsent(context: context) {
+            // Terminal unreadable state (#2634/#2650): OAuth cannot recover until the user either opts in
+            // to reading Claude Code's Keychain item or usage arrives via the Claude CLI fallback.
+            return ("Allow reading Claude Code's credentials in Settings…", .providerSettings(.claude))
+        }
+        if self.shouldOpenSettingsForCloudflareChallenge(context: context) {
+            return ("Open Claude Settings…", .providerSettings(.claude))
+        }
+        if self.shouldOpenBrowserForWebSessionError(context: context) {
+            if context.settings.claudeDesktopCookiesEnabled {
+                return ("Open Claude Settings…", .providerSettings(.claude))
+            }
+            return ("Re-login at claude.ai", .loginToProvider(url: "https://claude.ai/"))
+        }
+        if self.shouldOpenTerminalForOAuthError(store: context.store) {
+            return ("Open Terminal", .openTerminal(command: "claude"))
+        }
+        let swapOwnsAccountPresentation = ClaudeSwapMenuPrecedence.prefersClaudeSwap(
+            provider: context.provider,
+            accountCount: context.store.claudeSwapAccountSnapshots.count,
+            showSingleAccount: context.settings.claudeSwapShowSingleAccount)
+        guard !context.hasAccount || swapOwnsAccountPresentation else { return nil }
+        return (L("Sign in with Claude Code..."), .switchAccount(.claude))
+    }
+
+    @MainActor
+    private func shouldOpenSettingsForCloudflareChallenge(context: ProviderMenuLoginContext) -> Bool {
+        let source = context.settings.claudeSettingsSnapshot(tokenOverride: nil).usageDataSource
+        guard source == .auto || source == .web else { return false }
+        return context.store.error(for: .claude) ==
+            ClaudeWebAPIFetcher.FetchError.cloudflareChallenge.localizedDescription
+    }
+
+    @MainActor
+    private func shouldOfferDirectKeychainReadConsent(context: ProviderMenuLoginContext) -> Bool {
+        guard !context.settings.claudeOAuthDirectKeychainReadAllowed,
+              !context.settings.debugDisableKeychainAccess
+        else { return false }
+        return ClaudeOAuthUnreadableCredentialsError.matches(description: context.store.error(for: .claude))
+    }
+
+    @MainActor
+    private func shouldOpenBrowserForWebSessionError(context: ProviderMenuLoginContext) -> Bool {
+        let settings = context.settings.claudeSettingsSnapshot(tokenOverride: nil)
+        let source = settings.usageDataSource
+        guard source == .auto || source == .web,
+              settings.cookieSource == .auto,
+              let error = context.store.error(for: .claude)
+        else { return false }
+
+        let sessionErrors = [
+            ClaudeWebAPIFetcher.FetchError.unauthorized.localizedDescription,
+            ClaudeWebAPIFetcher.FetchError.noSessionKeyFound.localizedDescription,
+            ClaudeWebAPIFetcher.FetchError.noDesktopSessionKeyFound.localizedDescription,
+            ClaudeWebAPIFetcher.FetchError.invalidSessionKey.localizedDescription,
+        ]
+        if sessionErrors.contains(error) {
+            return true
+        }
+
+        guard error == ProviderFetchError.noAvailableStrategy(.claude).localizedDescription else { return false }
+        return context.store.fetchAttempts(for: .claude).contains {
+            $0.strategyID == "claude.web" && !$0.wasAvailable
+        }
+    }
+
+    @MainActor
+    private func shouldOpenTerminalForOAuthError(store: UsageStore) -> Bool {
+        guard store.error(for: .claude) != nil else { return false }
+        let attempts = store.fetchAttempts(for: .claude)
+        if attempts.contains(where: { $0.kind == .oauth && ($0.errorDescription?.isEmpty == false) }) {
+            return true
+        }
+        if let error = store.error(for: .claude)?.lowercased(), error.contains("oauth") {
+            return true
+        }
+        return false
+    }
+}
+
+/// Setup copy for the account-source toggle, its executable field and the empty-path status, chosen by the
+/// selected source so the instructions name the executable that will be run with that source's list arguments.
+/// Title, subtitle, placeholder and toggle subtitle are English catalog keys the settings rows localize; the
+/// status row renders its text as-is, so `missingPathStatus` is localized here.
+private struct ClaudeSwapSetupText {
+    let title: String
+    let subtitle: String
+    let placeholder: String
+    let toggleSubtitle: String
+    let missingPathStatus: String
+
+    init(source: ClaudeSwapAccountSource) {
+        switch source {
+        case .claudeSwap:
+            self.title = "claude-swap executable"
+            self.subtitle = "Path to the cswap executable (github.com/realiti4/claude-swap)."
+            self.placeholder = "~/.local/bin/cswap"
+            self.toggleSubtitle = "Shows usage and lets you switch accounts through `cswap`. " +
+                "Credentials stay managed by claude-swap; CodexBar never reads them."
+            self.missingPathStatus = L("Set the cswap executable path below.")
+        case .tcr:
+            // tcr picks the account for each request, so its list never offers a switch.
+            self.title = "tcr executable"
+            self.subtitle = "Path to the tcr executable (github.com/dhkts1/teamclaude-rs)."
+            self.placeholder = "/Applications/TcrBar.app/Contents/MacOS/tcr"
+            self.toggleSubtitle = "Shows usage from `tcr`; it does not switch accounts, because tcr picks " +
+                "the account for each request. Credentials stay managed by tcr; CodexBar never reads them."
+            self.missingPathStatus = L("Set the tcr executable path below.")
+        case .openCodex:
+            // On the hub ocx lists and switches the pool; a linked Mac shows the snapshot file read-only.
+            self.title = "opencodex executable"
+            self.subtitle = "Path to the ocx executable (github.com/lidge-jun/opencodex)."
+            self.placeholder = "/opt/homebrew/bin/ocx"
+            self.toggleSubtitle = "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the " +
+                "pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to " +
+                "switch. Credentials stay on the hub; CodexBar never reads them."
+            self.missingPathStatus = L("Set the ocx executable path below.")
+        }
+    }
+}

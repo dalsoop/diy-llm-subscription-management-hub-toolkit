@@ -1,0 +1,358 @@
+import { describe, expect, test } from "bun:test";
+import {
+  applyNewModelPolicy,
+  effectiveNewModelPolicy,
+  MODEL_REMOVAL_GRACE_FETCHES,
+  reconcileSuccessfulModelDiscoveries,
+} from "../../src/providers/new-model-policy";
+
+const now = "2026-08-24T02:11:00Z";
+
+describe("new-model policy", () => {
+  test("an unconfigured policy keeps a 600-model discovery out of the picker", () => {
+    const config = {
+      port: 10100, defaultProvider: "vendor",
+      providers: { vendor: { defaultModel: "model-3" } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    const models = Array.from({ length: 600 }, (_, i) => ({ provider: "vendor", id: `model-${i}` }));
+    expect(effectiveNewModelPolicy(config, "vendor")).toBe("off");
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels).toHaveLength(599);
+    expect(config.disabledModels).not.toContain("vendor/model-3");
+    // A manual choice survives repeated discovery and a new arrival remains off.
+    config.disabledModels = config.disabledModels!.filter(id => id !== "vendor/model-7");
+    reconcileSuccessfulModelDiscoveries({ config, models: [...models, { provider: "vendor", id: "new" }], authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels).not.toContain("vendor/model-7");
+    expect(config.disabledModels).toContain("vendor/new");
+  });
+
+  test("bootstrap without a default exposes nothing; explicit selections and all-on remain authoritative", () => {
+    for (const provider of [{}, { selectedModels: ["a"] }, { newModelPolicy: "on" as const }]) {
+      const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: provider } } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+      reconcileSuccessfulModelDiscoveries({ config, models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }], authoritativeProviders: ["vendor"], now });
+      expect(config.disabledModels ?? []).toEqual("selectedModels" in provider || "newModelPolicy" in provider ? [] : ["vendor/a", "vendor/b"]);
+    }
+  });
+
+  test("bootstrap preserves explicit model switches, static catalogs, and degraded discovery", () => {
+    for (const mode of ["switches", "static", "degraded"] as const) {
+      const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: {
+        ...(mode === "static" ? { liveModels: false } : {}),
+      } }, ...(mode === "switches" ? { disabledModels: ["vendor/b"] } : {}) } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+      reconcileSuccessfulModelDiscoveries({ config, models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }], authoritativeProviders: mode === "degraded" ? [] : ["vendor"], now });
+      expect(config.disabledModels ?? []).toEqual(mode === "switches" ? ["vendor/b"] : []);
+    }
+  });
+
+  test("a legacy unselected 600-model baseline is narrowed once, without resetting later choices", () => {
+    const models = Array.from({ length: 600 }, (_, i) => ({ provider: "vendor", id: `model-${i}` }));
+    const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: { defaultModel: "model-3" } },
+      modelDiscovery: { knownModels: { vendor: { ids: models.map(row => row.id), removed: [], updatedAt: now } } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels).toHaveLength(599);
+    expect(config.disabledModels).not.toContain("vendor/model-3");
+    config.disabledModels = [];
+    expect(reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now })).toBe(false);
+    expect(config.disabledModels).toEqual([]);
+  });
+
+  test("a legacy baseline without a default preserves choices across later default edits", () => {
+    const ids = Array.from({ length: 600 }, (_, i) => `model-${i}`);
+    const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: {} },
+      modelDiscovery: { knownModels: { vendor: { ids, removed: [], updatedAt: now } } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    const models = ids.map(id => ({ provider: "vendor", id }));
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels ?? []).toEqual([]);
+    expect(config.modelDiscovery!.knownModels!.vendor.visibilityInitialized).toBe(true);
+    config.providers.vendor!.defaultModel = "model-3";
+    expect(reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now })).toBe(false);
+    expect(config.disabledModels ?? []).toEqual([]);
+    reconcileSuccessfulModelDiscoveries({ config, models: [...models, { provider: "vendor", id: "new" }], authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels).toEqual(["vendor/new"]);
+  });
+
+  test.each([false, true])("a short baseline survives threshold growth (previously reconciled: %s)", previouslyReconciled => {
+    const models = Array.from({ length: 21 }, (_, i) => ({ provider: "vendor", id: `model-${i}` }));
+    const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: { defaultModel: "model-3" } },
+      modelDiscovery: { knownModels: { vendor: { ids: models.slice(0, 19).map(row => row.id), removed: [], updatedAt: now } } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    if (previouslyReconciled) {
+      reconcileSuccessfulModelDiscoveries({ config, models: models.slice(0, 19), authoritativeProviders: ["vendor"], now });
+      expect(config.disabledModels ?? []).toEqual([]);
+      expect(config.modelDiscovery!.knownModels!.vendor.visibilityInitialized).toBe(true);
+    }
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now });
+    expect(config.disabledModels).toEqual(["vendor/model-19", "vendor/model-20"]);
+    expect(config.modelDiscovery!.knownModels!.vendor.visibilityInitialized).toBe(true);
+  });
+
+  test.each(["active", "retired"] as const)("a switch for a missing %s model controls legacy initialization", state => {
+    const models = Array.from({ length: 600 }, (_, i) => ({ provider: "vendor", id: `model-${i}` }));
+    const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: { defaultModel: "model-3" } },
+      disabledModels: ["vendor/missing"], modelDiscovery: { knownModels: { vendor: {
+        ids: [...models.map(row => row.id), ...(state === "active" ? ["missing"] : [])],
+        removed: state === "retired" ? ["missing"] : [], updatedAt: now,
+      } } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: ["vendor"], now, mode: "discovery" });
+    expect(config.disabledModels).toHaveLength(state === "active" ? 1 : 600);
+    expect(config.disabledModels).toContain("vendor/missing");
+    expect(config.disabledModels).not.toContain("vendor/model-3");
+    expect(config.modelDiscovery!.knownModels!.vendor.visibilityInitialized).toBe(true);
+  });
+
+  test("a legacy Antigravity wire-tier switch survives normalization before initialization", () => {
+    const provider = "google-antigravity";
+    const base = "claude-opus-5-5";
+    const models = [...Array.from({ length: 20 }, (_, i) => ({ provider, id: `model-${i}` })), {
+      provider, id: base, antigravityEffortWireModelIds: { low: `${base}-low`, medium: `${base}-medium`, high: `${base}-high` },
+    }];
+    const config = { port: 10100, defaultProvider: provider, providers: { [provider]: { defaultModel: "model-3" } },
+      disabledModels: [`${provider}/${base}-high`], modelDiscovery: { knownModels: { [provider]: {
+        ids: [...models.slice(0, 20).map(row => row.id), `${base}-low`, `${base}-high`], removed: [], updatedAt: now,
+      } } },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    reconcileSuccessfulModelDiscoveries({ config, models, authoritativeProviders: [provider], now });
+    expect(config.disabledModels).toEqual([`${provider}/${base}-high`]);
+    expect(config.modelDiscovery!.knownModels![provider].visibilityInitialized).toBe(true);
+  });
+
+  test("bootstraps without hiding the existing catalog", () => {
+    const r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b"], policy: "off", now });
+    expect(r.newIds).toEqual([]); expect(r.slugsToDisable).toEqual([]); expect(r.nextBaseline.ids).toEqual(["a", "b"]);
+  });
+
+  test("walks the design scenario and auto-disables each id at most once", () => {
+    let baseline = { ids: ["a", "b", "c"], removed: [], updatedAt: now };
+    let r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b", "c", "d"], baseline, policy: "off", now });
+    expect(r.slugsToDisable).toEqual(["openrouter/d"]); baseline = r.nextBaseline;
+    r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b", "c", "d"], baseline, policy: "off", now });
+    expect(r.newIds).toEqual([]); baseline = r.nextBaseline;
+    for (let i = 0; i < 3; i++) baseline = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b", "c"], baseline, policy: "off", now }).nextBaseline;
+    expect(baseline.removed).toContain("d");
+    r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b", "c", "d"], baseline, policy: "off", now });
+    expect(r.newIds).toEqual([]); expect(r.slugsToDisable).toEqual([]);
+    baseline = r.nextBaseline;
+    r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "b", "d", "c-v2"], baseline, policy: "off", now });
+    expect(r.slugsToDisable).toEqual(["openrouter/c-v2"]);
+  });
+
+  test("preset mode is a deliberate no-op while still recording the arrival", () => {
+    const r = applyNewModelPolicy({ provider: "openrouter", discoveredIds: ["a", "d"], baseline: { ids: ["a"], removed: [], updatedAt: now }, policy: "off", hasSelectedModels: true, now });
+    expect(r.newIds).toEqual(["d"]); expect(r.arrivals).toEqual([{ id: "d", at: now }]); expect(r.slugsToDisable).toEqual([]);
+  });
+
+  test.each(["off", "on"] as const)("Copilot Auto and mixed arrivals obey %s like other providers", policy => {
+    const baseline = { ids: ["gpt-4o"], removed: [], updatedAt: now };
+    for (const provider of ["github-copilot", "unknown-provider"]) {
+      const result = applyNewModelPolicy({ provider, discoveredIds: ["auto", "gpt-4o", "new-model"], baseline, policy, now });
+      expect(result.slugsToDisable).toEqual(policy === "off" ? [`${provider}/auto`, `${provider}/new-model`] : []);
+      expect(result.newIds).toEqual(["auto", "new-model"]);
+      expect(result.nextBaseline.ids).toEqual(["auto", "gpt-4o", "new-model"]);
+      expect(result.arrivals).toEqual([{ id: "auto", at: now }, { id: "new-model", at: now }]);
+      const repeated = applyNewModelPolicy({ provider, discoveredIds: result.nextBaseline.ids, baseline: result.nextBaseline, policy, now });
+      expect(repeated.slugsToDisable).toEqual([]);
+      expect(repeated.newIds).toEqual([]);
+    }
+  });
+
+  test("degraded providers do not poison a persisted baseline", () => {
+    const config = { port: 10100, defaultProvider: "vendor", providers: { vendor: {} }, modelDiscovery: { newModelPolicy: "off" as const, knownModels: { vendor: { ids: ["a", "b"], removed: [], updatedAt: now } } } };
+    expect(reconcileSuccessfulModelDiscoveries({ config, models: [{ provider: "vendor", id: "a" }], authoritativeProviders: [], now })).toBe(false);
+    expect(config.modelDiscovery.knownModels.vendor.ids).toEqual(["a", "b"]);
+  });
+
+  /**
+   * The steady state is the common case: a provider's roster is identical on almost every
+   * convergence, and convergence runs on every catalog write. Reporting "changed" there would
+   * rewrite config.json each time and move the config generation that other writers revalidate
+   * against — a write amplification with no user-visible cause.
+   */
+  test("an unchanged roster reports no change, so convergence does not rewrite config", () => {
+    const config = {
+      port: 10100, defaultProvider: "vendor", providers: { vendor: {} },
+      modelDiscovery: {
+        newModelPolicy: "off" as const,
+        knownModels: { vendor: { ids: ["a", "b"], removed: [], updatedAt: "2026-01-01T00:00:00Z", visibilityInitialized: true } },
+      },
+    };
+    const changed = reconcileSuccessfulModelDiscoveries({
+      config,
+      models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }],
+      authoritativeProviders: ["vendor"],
+      now,
+    });
+    expect(changed).toBe(false);
+    // The timestamp is deliberately NOT advanced: a bumped updatedAt would make the very next
+    // comparison look dirty and reintroduce the rewrite it just avoided.
+    expect(config.modelDiscovery.knownModels.vendor.updatedAt).toBe("2026-01-01T00:00:00Z");
+  });
+
+  test("a genuine arrival still reports a change and records the disable", () => {
+    const config = {
+      port: 10100, defaultProvider: "vendor", providers: { vendor: {} },
+      modelDiscovery: {
+        newModelPolicy: "off" as const,
+        knownModels: { vendor: { ids: ["a"], removed: [], updatedAt: "2026-01-01T00:00:00Z" } },
+      },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+    const changed = reconcileSuccessfulModelDiscoveries({
+      config,
+      models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }],
+      authoritativeProviders: ["vendor"],
+      now,
+    });
+    expect(changed).toBe(true);
+    expect(config.disabledModels).toEqual(["vendor/b"]);
+    expect(config.modelDiscovery!.knownModels!.vendor!.updatedAt).toBe(now);
+  });
+
+  /**
+   * GET /v1/models is polled far more often than convergence runs, so the read side reconciles
+   * from the same roster repeatedly. Advancing the removal grace once per poll would retire a
+   * transiently absent id after three polls and write config.json each time. Only convergence may
+   * move an id toward `removed`.
+   */
+  describe("removal grace is advanced by convergence only", () => {
+    const seedBaseline = { ids: ["a", "b", "c"], removed: [] as string[], updatedAt: "2026-01-01T00:00:00Z" };
+    const roster = [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }];
+
+    test("read-side reconciliation never retires an id that disappears from the roster", () => {
+      let baseline = seedBaseline;
+      for (let poll = 0; poll < MODEL_REMOVAL_GRACE_FETCHES * 4; poll++) {
+        const result = applyNewModelPolicy({
+          provider: "vendor", discoveredIds: ["a", "b"], baseline, policy: "off", now, mode: "discovery",
+        });
+        expect(result.newIds).toEqual([]);
+        expect(result.nextBaseline.ids).toEqual(["a", "b", "c"]);
+        expect(result.nextBaseline.removed).toEqual([]);
+        expect(result.nextBaseline.missing).toBeUndefined();
+        baseline = result.nextBaseline;
+      }
+    });
+
+    test("convergence still retires the same id after the grace fetches (control)", () => {
+      let baseline = seedBaseline;
+      for (let cycle = 0; cycle < MODEL_REMOVAL_GRACE_FETCHES; cycle++) {
+        baseline = applyNewModelPolicy({
+          provider: "vendor", discoveredIds: ["a", "b"], baseline, policy: "off", now, mode: "converge",
+        }).nextBaseline;
+      }
+      expect(baseline.ids).toEqual(["a", "b"]);
+      expect(baseline.removed).toEqual(["c"]);
+    });
+
+    test("read-side reconciliation still hides a genuine arrival but a reappearance clears its pending removal", () => {
+      const arrival = applyNewModelPolicy({
+        provider: "vendor", discoveredIds: ["a", "b"], baseline: { ids: ["a"], removed: [], updatedAt: now },
+        policy: "off", now, mode: "discovery",
+      });
+      expect(arrival.newIds).toEqual(["b"]);
+      expect(arrival.slugsToDisable).toEqual(["vendor/b"]);
+
+      const resumed = applyNewModelPolicy({
+        provider: "vendor", discoveredIds: ["a", "c"],
+        baseline: { ids: ["a", "c"], removed: [], missing: { c: MODEL_REMOVAL_GRACE_FETCHES - 1 }, updatedAt: now },
+        policy: "off", now, mode: "discovery",
+      });
+      expect(resumed.nextBaseline.missing).toBeUndefined();
+      expect(resumed.nextBaseline.removed).toEqual([]);
+    });
+
+    test("repeated read-side reconciliation of the same roster never shrinks the baseline or reports a change", () => {
+      const config = {
+        port: 10100, defaultProvider: "vendor", providers: { vendor: {} },
+        modelDiscovery: { newModelPolicy: "off" as const, knownModels: { vendor: { ...structuredClone(seedBaseline), visibilityInitialized: true } } },
+      } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+      for (let poll = 0; poll < MODEL_REMOVAL_GRACE_FETCHES * 3; poll++) {
+        const changed = reconcileSuccessfulModelDiscoveries({
+          config, models: roster, authoritativeProviders: ["vendor"], now, mode: "discovery",
+        });
+        expect(changed).toBe(false);
+      }
+      const known = config.modelDiscovery!.knownModels!.vendor!;
+      expect(known.ids).toEqual(["a", "b", "c"]);
+      expect(known.removed).toEqual([]);
+      expect(known.missing).toBeUndefined();
+    });
+
+    test("repeated convergence of the same shrinking roster retires the id (control)", () => {
+      const config = {
+        port: 10100, defaultProvider: "vendor", providers: { vendor: {} },
+        modelDiscovery: { newModelPolicy: "off" as const, knownModels: { vendor: structuredClone(seedBaseline) } },
+      } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"];
+      for (let cycle = 0; cycle < MODEL_REMOVAL_GRACE_FETCHES; cycle++) {
+        reconcileSuccessfulModelDiscoveries({
+          config, models: roster, authoritativeProviders: ["vendor"], now,
+        });
+      }
+      expect(config.modelDiscovery!.knownModels!.vendor!.removed).toEqual(["c"]);
+    });
+  });
+
+  describe("effective per-provider policy override", () => {
+    /** Minimal convergence config: one known id, an optional provider-level override. */
+    const convergenceConfig = (global: "on" | "off", local?: "on" | "off") => ({
+      port: 10100, defaultProvider: "vendor",
+      providers: { vendor: local ? { newModelPolicy: local } : {} },
+      modelDiscovery: {
+        newModelPolicy: global,
+        knownModels: { vendor: { ids: ["a"], removed: [], updatedAt: "2026-01-01T00:00:00Z" } },
+      },
+    } as Parameters<typeof reconcileSuccessfulModelDiscoveries>[0]["config"]);
+
+    test("the provider value wins, and an inherited/absent value falls back to the global flag", () => {
+      const config = {
+        port: 10100, defaultProvider: "alpha",
+        providers: {
+          alpha: { newModelPolicy: "off" as const }, beta: { newModelPolicy: "on" as const },
+          gamma: { newModelPolicy: "inherit" as const }, delta: {},
+        },
+        modelDiscovery: { newModelPolicy: "on" as const },
+      } as Parameters<typeof effectiveNewModelPolicy>[0];
+      expect(effectiveNewModelPolicy(config, "alpha")).toBe("off");
+      expect(effectiveNewModelPolicy(config, "beta")).toBe("on");
+      expect(effectiveNewModelPolicy(config, "gamma")).toBe("on");
+      expect(effectiveNewModelPolicy(config, "delta")).toBe("on");
+      const globalOff = { ...config, modelDiscovery: { newModelPolicy: "off" as const } } as typeof config;
+      expect(effectiveNewModelPolicy(globalOff, "delta")).toBe("off");
+      expect(effectiveNewModelPolicy(globalOff, "beta")).toBe("on");
+    });
+
+    test("a provider off override hides a genuine arrival under a global on", () => {
+      const config = convergenceConfig("on", "off");
+      const changed = reconcileSuccessfulModelDiscoveries({
+        config,
+        models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }],
+        authoritativeProviders: ["vendor"], now,
+      });
+      expect(changed).toBe(true);
+      expect(config.disabledModels).toEqual(["vendor/b"]);
+    });
+
+    test("a provider on override lets a genuine arrival through under a global off", () => {
+      const config = convergenceConfig("off", "on");
+      const changed = reconcileSuccessfulModelDiscoveries({
+        config,
+        models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }],
+        authoritativeProviders: ["vendor"], now,
+      });
+      expect(changed).toBe(true);
+      expect(config.disabledModels).toBeUndefined();
+      expect(config.modelDiscovery!.recentArrivals!.vendor).toEqual([{ id: "b", at: now }]);
+    });
+
+    test("an explicit disabled choice survives a provider on override", () => {
+      const config = convergenceConfig("off", "on");
+      config.disabledModels = ["vendor/b"];
+      reconcileSuccessfulModelDiscoveries({
+        config,
+        models: [{ provider: "vendor", id: "a" }, { provider: "vendor", id: "b" }],
+        authoritativeProviders: ["vendor"], now,
+      });
+      expect(config.disabledModels).toEqual(["vendor/b"]);
+    });
+  });
+});

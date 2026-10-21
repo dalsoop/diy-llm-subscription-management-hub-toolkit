@@ -1,0 +1,69 @@
+---
+summary: "Vertex AI provider data sources: gcloud ADC credentials and Cloud Monitoring quota usage."
+read_when:
+  - Debugging Vertex AI auth or quota fetch
+  - Updating Vertex AI usage mapping or login flow
+---
+
+# Vertex AI provider
+
+## Data sources + fallback order
+1) **OAuth via gcloud ADC** (only path used in `fetch()`):
+   - Reads `application_default_credentials.json` from the gcloud config directory.
+   - Uses Cloud Monitoring time-series metrics to compute quota usage.
+
+## OAuth credentials
+- Authenticate: `gcloud auth application-default login`.
+- Project: `gcloud config set project PROJECT_ID`.
+- Fallback project env vars: `GOOGLE_CLOUD_PROJECT`, `GCLOUD_PROJECT`, `CLOUDSDK_CORE_PROJECT`.
+- Refresh responses must contain a usable access token; malformed responses fail without extending the previous token's expiry.
+- gcloud retains ownership of credential-file updates; refreshed tokens are used in memory.
+
+## API endpoints
+- Cloud Monitoring timeSeries:
+  - Usage: `serviceruntime.googleapis.com/quota/allocation/usage`
+  - Limit: `serviceruntime.googleapis.com/quota/limit`
+  - Resource: `consumer_quota` with `service="aiplatform.googleapis.com"`.
+  - Each usage/limit query follows distinct page tokens only. A repeated token ends pagination after retaining
+    the current page, so no page is requested twice. Queries that still have a new token after 100 pages fail
+    instead of continuing indefinitely; a final page with no next token still succeeds at that boundary.
+
+## Mapping
+- Matches usage + limit series by quota metric + limit name + location.
+- Reports the highest usage percent across matched series.
+- The current provider snapshot publishes gcloud identity without quota windows; local token costs are fetched
+  separately. Recognized temporary network failures during token refresh or monitoring requests retain the last
+  successful identity snapshot and timestamp, including localized errors. Authentication and IAM failures keep their
+  existing behavior.
+
+## Token Cost Tracking
+
+Vertex AI Claude usage is logged to the same local files as direct Anthropic API usage (`~/.claude/projects/`). CodexBar identifies Vertex AI entries using two methods:
+
+Regular cost refreshes retain `vertexai-v6.json`; the app's independent Usage & Spend refresh uses `vertexai-history-v6.json` and a separate report memo. App memos track that rows were selected for their current window; older unverified caches rebuild once, and changing the app window preserves cold-scan duplicate selection. Provider filtering, pricing, and other providers' shared cache locations remain unchanged.
+
+The cache and report memo use the same [incremental project-shard storage as Claude](claude.md#cost-usage-local-log-scan), with separate Vertex manifests and shards. Existing single-file caches migrate on their next save without a migration-only transcript rescan.
+
+### Detection Methods
+
+1. **Model name format** (primary): Vertex AI uses `@` as version separator
+   - Vertex AI: `claude-opus-4-5@20251101`
+   - Anthropic API: `claude-opus-4-5-20251101`
+
+2. **Metadata fields** (fallback): Entries with provider metadata
+   - `metadata.provider: "vertexai"`
+   - Keys containing `vertex` or `gcp`
+
+### Requirements
+
+**To see Vertex AI token costs:**
+1. Enable the **Vertex AI** provider in Settings → Providers
+2. Enable "Show cost summary" in Settings → General
+3. Use Claude Code with Vertex AI (your `cv` alias sets `ANTHROPIC_MODEL=claude-opus-4-5@20251101`)
+
+**Note:** The model name must include the `@` format for detection to work. If Claude Code normalizes model names to `-` format when logging, the entries won't be distinguishable from direct Anthropic API usage.
+
+## Troubleshooting
+- **No quota data**: Ensure Cloud Monitoring API access in the selected project.
+- **No cost data**: Check that `~/.claude/projects/` exists and contains `.jsonl` files from Claude Code usage with Vertex AI metadata.
+- **Auth issues**: Re-run `gcloud auth application-default login`.

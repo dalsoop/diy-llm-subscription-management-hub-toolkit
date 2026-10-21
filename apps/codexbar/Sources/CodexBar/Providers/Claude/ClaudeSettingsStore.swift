@@ -1,0 +1,231 @@
+import CodexBarCore
+import Foundation
+
+extension SettingsStore {
+    var claudeUsageDataSource: ClaudeUsageDataSource {
+        get {
+            let source = self.configSnapshot.providerConfig(for: .claude)?.source
+            return Self.claudeUsageDataSource(from: source)
+        }
+        set {
+            let source: ProviderSourceMode? = switch newValue {
+            case .auto: .auto
+            case .api: .api
+            case .oauth: .oauth
+            case .web: .web
+            case .cli: .cli
+            }
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.source = source
+            }
+            self.logProviderModeChange(provider: .claude, field: "usageSource", value: newValue.rawValue)
+            if newValue != .cli {
+                self.claudeWebExtrasEnabled = false
+            }
+        }
+    }
+
+    var claudeCookieHeader: String {
+        get { self[providerConfig: .claude, field: .cookieHeader] }
+        set { self[providerConfig: .claude, field: .cookieHeader] = newValue }
+    }
+
+    var claudeCookieSource: ProviderCookieSource {
+        get { self.resolvedCookieSource(provider: .claude, fallback: .auto) }
+        set { self.setCookieSource(newValue, provider: .claude) }
+    }
+
+    var claudeDesktopCookiesEnabled: Bool {
+        get { self.configSnapshot.providerConfig(for: .claude)?.claudeDesktopCookiesEnabled ?? false }
+        set { self.updateProviderConfig(provider: .claude) { $0.claudeDesktopCookiesEnabled = newValue } }
+    }
+
+    var claudeWorkspaceSpendEnabled: Bool {
+        get { self.configSnapshot.providerConfig(for: .claude)?.claudeWorkspaceSpendEnabled ?? false }
+        set {
+            self.updateProviderConfig(provider: .claude) { $0.claudeWorkspaceSpendEnabled = newValue }
+        }
+    }
+
+    var claudeAdminAPIKey: String {
+        get { self[providerConfig: .claude, field: .apiKey] }
+        set { self[providerConfig: .claude, field: .apiKey] = newValue }
+    }
+
+    var claudeSwapEnabled: Bool {
+        get {
+            self.configSnapshot.providerConfig(for: .claude)?.claudeSwapEnabled
+                ?? OpenCodexHubDefaults.sourceEnabledByDefault
+        }
+        set {
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.claudeSwapEnabled = newValue
+            }
+            self.logProviderModeChange(provider: .claude, field: "claudeSwapEnabled", value: String(newValue))
+        }
+    }
+
+    var claudeSwapShowSingleAccount: Bool {
+        get { self.configSnapshot.providerConfig(for: .claude)?.claudeSwapShowSingleAccount ?? false }
+        set {
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.claudeSwapShowSingleAccount = newValue
+            }
+            self.logProviderModeChange(
+                provider: .claude,
+                field: "claudeSwapShowSingleAccount",
+                value: String(newValue))
+        }
+    }
+
+    var claudeSwapExecutablePath: String {
+        get { self.configSnapshot.providerConfig(for: .claude)?.sanitizedClaudeSwapExecutablePath ?? "" }
+        set {
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.claudeSwapExecutablePath = self.normalizedConfigValue(newValue)
+            }
+            self.logProviderModeChange(
+                provider: .claude,
+                field: "claudeSwapExecutablePath",
+                value: newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "cleared" : "set")
+        }
+    }
+
+    var claudeSwapSource: ClaudeSwapAccountSource {
+        get { self.configSnapshot.providerConfig(for: .claude)?.resolvedClaudeSwapSource ?? .defaultSource }
+        set {
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.claudeSwapSource = newValue == .defaultSource ? nil : newValue.rawValue
+            }
+            self.logProviderModeChange(provider: .claude, field: "claudeSwapSource", value: newValue.rawValue)
+        }
+    }
+
+    var claudeSwapOpenCodexSnapshotPath: String {
+        get {
+            self.configSnapshot.providerConfig(for: .claude)?.sanitizedOpenCodexHubSnapshotPath
+                ?? OpenCodexHubDefaults.snapshotPath ?? ""
+        }
+        set {
+            self.updateProviderConfig(provider: .claude) { entry in
+                entry.openCodexHubSnapshotPath = self.normalizedConfigValue(newValue)
+            }
+            self.logProviderModeChange(
+                provider: .claude,
+                field: "openCodexHubSnapshotPath",
+                value: newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "cleared" : "set")
+        }
+    }
+}
+
+extension SettingsStore {
+    func claudeSettingsSnapshot(tokenOverride: TokenAccountOverride?) -> ProviderSettingsSnapshot
+    .ClaudeProviderSettings {
+        let account = self.selectedClaudeTokenAccount(tokenOverride: tokenOverride)
+        let routing = self.claudeCredentialRouting(account: account)
+        return ProviderSettingsSnapshot.ClaudeProviderSettings(
+            usageDataSource: self.claudeSnapshotUsageDataSource(
+                routing: routing,
+                hasSelectedAccount: account != nil),
+            webExtrasEnabled: self.claudeWebExtrasEnabled,
+            cookieSource: self.claudeSnapshotCookieSource(tokenOverride: tokenOverride, routing: routing),
+            manualCookieHeader: self.claudeSnapshotCookieHeader(
+                routing: routing,
+                hasSelectedAccount: account != nil),
+            organizationID: account?.sanitizedOrganizationID,
+            desktopCookiesEnabled: self.claudeDesktopCookiesEnabled)
+    }
+
+    private static func claudeUsageDataSource(from source: ProviderSourceMode?) -> ClaudeUsageDataSource {
+        guard let source else { return .auto }
+        switch source {
+        case .auto, .api:
+            return source == .api ? .api : .auto
+        case .web:
+            return .web
+        case .cli:
+            return .cli
+        case .oauth:
+            return .oauth
+        }
+    }
+
+    private func claudeSnapshotCookieHeader(
+        routing: ClaudeCredentialRouting,
+        hasSelectedAccount: Bool) -> String
+    {
+        switch routing {
+        case .none:
+            hasSelectedAccount ? "" : self.claudeCookieHeader
+        case .oauth:
+            ""
+        case .adminAPIKey:
+            ""
+        case let .webCookie(header):
+            header
+        }
+    }
+
+    private func claudeSnapshotUsageDataSource(
+        routing: ClaudeCredentialRouting,
+        hasSelectedAccount: Bool) -> ClaudeUsageDataSource
+    {
+        guard hasSelectedAccount else { return self.claudeUsageDataSource }
+        return switch routing {
+        case .oauth:
+            .oauth
+        case .adminAPIKey:
+            .api
+        case .webCookie:
+            .web
+        case .none:
+            .auto
+        }
+    }
+
+    private func claudeSnapshotCookieSource(
+        tokenOverride: TokenAccountOverride?,
+        routing: ClaudeCredentialRouting) -> ProviderCookieSource
+    {
+        let fallback = self.claudeCookieSource
+        guard let support = TokenAccountSupportCatalog.support(for: .claude),
+              support.requiresManualCookieSource
+        else {
+            return fallback
+        }
+        if routing.isOAuth {
+            return .off
+        }
+        if routing.adminAPIKey != nil {
+            return .off
+        }
+        if self.tokenAccounts(for: .claude).isEmpty { return fallback }
+        return .manual
+    }
+
+    private func claudeCredentialRouting(account: ProviderTokenAccount?) -> ClaudeCredentialRouting {
+        let manualCookieHeader = account == nil ? self.claudeCookieHeader : nil
+        return ClaudeCredentialRouting.resolve(
+            tokenAccountToken: account?.token,
+            manualCookieHeader: manualCookieHeader)
+    }
+
+    private func selectedClaudeTokenAccount(tokenOverride: TokenAccountOverride?) -> ProviderTokenAccount? {
+        ProviderTokenAccountSelection.selectedAccount(
+            provider: .claude,
+            settings: self,
+            override: tokenOverride)
+    }
+}
+
+extension UsageStore {
+    var claudeTokenCostConfigDirectory: String? {
+        guard !self.settings.claudeSwapEnabled || !ClaudeSwapMenuPrecedence.prefersClaudeSwap(
+            provider: .claude,
+            accountCount: self.claudeSwapAccountSnapshots.count,
+            showSingleAccount: self.settings.claudeSwapShowSingleAccount)
+        else { return nil }
+        return self.settings.effectiveSelectedTokenAccount(for: .claude)?.claudeConfigDirectory
+            .flatMap { $0.isEmpty ? nil : $0 }
+    }
+}

@@ -1,0 +1,28 @@
+---
+summary: "Packaging, signing, and bundled CLI notes."
+read_when:
+  - Packaging/signing builds
+  - Updating bundle layout or CLI bundling
+---
+
+# Packaging & signing
+
+## Scripts
+- `Scripts/package_app.sh`: builds host arch with ad-hoc signing by default; set `ARCHES="arm64 x86_64"` for universal. Verifies slices. Stable-certificate packaging requires explicit `CODEXBAR_SIGNING=identity` plus `APP_IDENTITY`.
+- The bundled Developer ID provisioning profile and CloudKit entitlements apply only to upstream-team release builds. An alternate resolved `APP_TEAM_ID` retains its matching app/widget groups without that upstream profile; direct callers remain responsible for selecting a team consistent with their identity.
+- `Scripts/compile_and_run.sh`: uses host arch; pass `--release-universal` or `--release-arches="arm64 x86_64"` for release packaging.
+- `Scripts/sign-and-notarize.sh`: explicitly selects Developer ID signing, notarizes, staples, and zips (accepts `ARCHES` for universal).
+- `.github/workflows/release.yml`: builds the signed release payload and owns Sparkle feed publication; see [the release process](RELEASING.md).
+- `Scripts/changelog-to-html.sh`: converts the per-version changelog section to HTML for Sparkle.
+- `Scripts/verify_packaged_app_launch.sh`: checks resource loading and AppKit liveness with a temporary home, disabled synthetic provider config, no inherited credentials, test-safe background work, and a sandbox guard against writes to the real home directory.
+
+## Bundle contents
+- `CodexBarWidget.appex` is built by `WidgetExtension/CodexBarWidgetExtension.xcodeproj` as a real macOS app extension, then bundled with app-group entitlements.
+- When updating dependencies, refresh both the root `Package.resolved` and the widget workspace's `Package.resolved`, and verify their pinned revisions agree. Packaging deliberately disables automatic dependency resolution.
+- `CodexBarCLI` copied to `CodexBar.app/Contents/Helpers/` for symlinking.
+- SwiftPM resource bundles (e.g. `KeyboardShortcuts_KeyboardShortcuts.bundle`) copied into `Contents/Resources` (required for `KeyboardShortcuts.Recorder`).
+
+## Releases
+- Full checklist in `docs/RELEASING.md`.
+
+See also: `docs/sparkle.md`.

@@ -1,0 +1,90 @@
+import CodexBarCore
+import Foundation
+
+struct ClaudeSwapAccountMenuDisplay {
+    let accounts: [ProviderAccountUsageSnapshot]
+    let layout: MultiAccountMenuLayout
+    let switchingAccountID: ProviderAccountIdentity?
+    let errorAccountID: ProviderAccountIdentity?
+    var inspectedAccountID: ProviderAccountIdentity?
+
+    var showsSwitcher: Bool {
+        self.layout == .segmented && self.accounts.count > 1
+    }
+
+    var displayedAccount: ProviderAccountUsageSnapshot? {
+        // Keep pending/failed activation details attached to the requested stable slot.
+        for id in [self.switchingAccountID, self.inspectedAccountID, self.errorAccountID].compactMap(\.self) {
+            if let account = self.accounts.first(where: { $0.id == id }) {
+                return account
+            }
+        }
+        return self.accounts.first(where: \.isActive)
+    }
+
+    static func label(for account: ProviderAccountUsageSnapshot, hidePersonalInfo: Bool) -> String {
+        PersonalInfoRedactor.redactAccountLabel(
+            account.displayLabel,
+            isEnabled: hidePersonalInfo,
+            ordinal: self.privacyOrdinal(for: account))
+    }
+
+    static func activatesAccount(_ account: ProviderAccountUsageSnapshot) -> Bool {
+        !account.isActive && account.canActivate
+    }
+
+    static func chipHelp(for account: ProviderAccountUsageSnapshot, hidePersonalInfo: Bool) -> String {
+        let label = self.label(for: account, hidePersonalInfo: hidePersonalInfo)
+        return self.activatesAccount(account) ? L("Switch Claude Code to %@", label) : L("Details for %@", label)
+    }
+
+    static func privacyOrdinal(for account: ProviderAccountUsageSnapshot) -> PersonalInfoRedactor.AccountOrdinal? {
+        // The switcher also draws opencodex hub accounts (Codex and Grok cards); they carry their own ordinal.
+        if let ordinal = OpenCodexHubAccountProjection.privacyOrdinal(for: account) { return ordinal }
+        guard account.provider == .claude,
+              ClaudeSwapAccountSource(identitySource: account.id.source) != nil,
+              let number = Int(account.id.opaqueID)
+        else { return nil }
+        return PersonalInfoRedactor.AccountOrdinal(number)
+    }
+
+    static func cardContext(
+        for account: ProviderAccountUsageSnapshot,
+        planLabel: String?,
+        adapterError: String?,
+        switchError: String?,
+        historySelection: PlanUtilizationHistorySelection? = nil) -> UsageMenuCardContext
+    {
+        .account(.init(
+            snapshot: account.snapshot,
+            error: ClaudeSwapAccountProjection.displayError(
+                accountError: account.error,
+                adapterError: adapterError,
+                switchError: switchError),
+            info: AccountInfo(email: account.displayLabel, plan: nil),
+            privacyOrdinal: self.privacyOrdinal(for: account),
+            historySelection: historySelection,
+            plan: .label(planLabel),
+            planEmphasis: account.isActive ? .active : .none,
+            lastKnownUsageCapturedAt: account.usesLastKnownUsage ? account.snapshot?.updatedAt : nil,
+            sourceLabel: ClaudeSwapAccountSource(identitySource: account.id.source)?.label
+                ?? ClaudeSwapAccountProjection.sourceLabel))
+    }
+
+    static func actionLabel(
+        for account: ProviderAccountUsageSnapshot,
+        switchingAccountID: ProviderAccountIdentity?,
+        switchInFlight: Bool,
+        switchPhase: ClaudeSwapSwitchPhase?) -> String?
+    {
+        if switchingAccountID == account.id, let switchPhase {
+            return switch switchPhase {
+            case .activating: L("Switching account…")
+            case .reconciling: L("Refreshing account status…")
+            }
+        }
+        if account.isActive, !account.canActivate { return L("Active") }
+        guard !switchInFlight, account.canActivate else { return nil }
+        return account.isActive ? L("Re-authenticate") : L("Switch Account...")
+    }
+}

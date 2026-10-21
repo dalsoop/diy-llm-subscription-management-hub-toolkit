@@ -1,0 +1,26 @@
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node / Bun
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Swift / Xcode / SPM
+apps/codexbar/Packages/
+xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Environment & Temp
+.env
+.env.local
+*.local
+.tmp/
+*.log
