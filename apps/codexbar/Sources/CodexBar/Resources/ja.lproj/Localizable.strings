@@ -1857,6 +1857,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "~/.aws/config から AWS プロファイルという名前を付けました。 AWS_PROFILEでも設定可能です。";
 "Next provider" = "次のプロバイダー";
 "No active account" = "アクティブなアカウントがありません";
+"The opencodex hub snapshot is out of date" = "opencodex ハブのスナップショットが古くなっています";
 "No cookie header pasted." = "cookie ヘッダーは貼り付けられていません。";
 "No matching OpenAI web session found for %@." = "%@ に一致する OpenAI Web セッションが見つかりません。";
 "No matching OpenAI web session found." = "一致する OpenAI Web セッションが見つかりません。";

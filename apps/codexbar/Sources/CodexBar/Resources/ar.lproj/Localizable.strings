@@ -1861,6 +1861,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "تم تسمية الملف الشخصي AWS من ~/.aws/config. يمكن أيضًا ضبطه مع AWS_PROFILE.";
 "Next provider" = "المزود التالي";
 "No active account" = "لا يوجد حساب نشط";
+"The opencodex hub snapshot is out of date" = "لقطة مركز opencodex قديمة";
 "No cookie header pasted." = "لم يتم لصق رأس cookie.";
 "No matching OpenAI web session found for %@." = "لم يتم العثور على جلسة ويب OpenAI مطابقة لـ %@.";
 "No matching OpenAI web session found." = "لم يتم العثور على جلسة ويب OpenAI مطابقة.";

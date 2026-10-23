@@ -1861,6 +1861,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE.";
 "Next provider" = "Next provider";
 "No active account" = "No active account";
+"The opencodex hub snapshot is out of date" = "The opencodex hub snapshot is out of date";
 "No cookie header pasted." = "No cookie header pasted.";
 "No matching OpenAI web session found for %@." = "No matching OpenAI web session found for %@.";
 "No matching OpenAI web session found." = "No matching OpenAI web session found.";

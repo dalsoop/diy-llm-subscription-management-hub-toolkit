@@ -1861,6 +1861,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "Dinamakan profil AWS dari ~/.aws/config. Bisa juga diatur dengan AWS_PROFILE.";
 "Next provider" = "Penyedia berikutnya";
 "No active account" = "Tidak ada akun aktif";
+"The opencodex hub snapshot is out of date" = "Snapshot hub opencodex sudah usang";
 "No cookie header pasted." = "Tidak ada header cookie yang ditempel.";
 "No matching OpenAI web session found for %@." = "Tidak ditemukan sesi web OpenAI yang cocok untuk %@.";
 "No matching OpenAI web session found." = "Tidak ditemukan sesi web OpenAI yang cocok.";

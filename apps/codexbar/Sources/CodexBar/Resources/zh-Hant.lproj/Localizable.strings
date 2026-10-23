@@ -1864,6 +1864,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "~/.aws/config 中的 AWS 配置檔案名稱，也可通過 AWS_PROFILE 設置。";
 "Next provider" = "下一個提供者";
 "No active account" = "沒有正在使用的帳戶";
+"The opencodex hub snapshot is out of date" = "opencodex 中樞快照已過期";
 "No cookie header pasted." = "尚未粘貼 Cookie 請求頭。";
 "No model-level history in this local snapshot" = "此本地快照沒有按模型統計的歷史用量";
 "No usage fetched yet" = "尚未獲取用量";

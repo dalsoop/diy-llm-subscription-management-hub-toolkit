@@ -1861,6 +1861,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "ตั้งชื่อโปรไฟล์ AWS จาก ~/.aws/config สามารถตั้งค่าด้วย AWS_PROFILE ได้เช่นกัน";
 "Next provider" = "ผู้ให้บริการรายต่อไป";
 "No active account" = "ไม่มีบัญชีที่ใช้งานอยู่";
+"The opencodex hub snapshot is out of date" = "สแนปช็อตของฮับ opencodex ล้าสมัยแล้ว";
 "No cookie header pasted." = "ไม่มีการวางส่วนหัว cookie";
 "No matching OpenAI web session found for %@." = "ไม่พบเซสชันเว็บ OpenAI ที่ตรงกันสำหรับ %@";
 "No matching OpenAI web session found." = "ไม่พบเซสชันเว็บ OpenAI ที่ตรงกัน";

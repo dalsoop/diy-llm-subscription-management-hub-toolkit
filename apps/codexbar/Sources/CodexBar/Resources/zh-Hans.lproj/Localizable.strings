@@ -1864,6 +1864,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "~/.aws/config 中的 AWS 配置档案名称，也可通过 AWS_PROFILE 设置。";
 "Next provider" = "下一个提供商";
 "No active account" = "没有正在使用的账户";
+"The opencodex hub snapshot is out of date" = "opencodex 中心快照已过期";
 "No cookie header pasted." = "尚未粘贴 Cookie 请求头。";
 "No matching OpenAI web session found for %@." = "找不到与 %@ 匹配的 OpenAI Web 会话。";
 "No matching OpenAI web session found." = "找不到匹配的 OpenAI Web 会话。";

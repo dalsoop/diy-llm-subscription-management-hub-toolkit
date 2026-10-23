@@ -84,4 +84,74 @@ struct OpenCodexHubClaudeCardTests {
         fixture.settings.claudeSwapSource = .claudeSwap
         #expect(!fixture.store.claudeCardReplacesOpenCodexAdapter)
     }
+
+    private static func anthropicPool(
+        fiveHour: Double,
+        weekly: Double,
+        origin: OpenCodexHubPoolOrigin) -> OpenCodexHubPool
+    {
+        OpenCodexHubPool(
+            provider: .anthropic,
+            accounts: [
+                OpenCodexHubAccount(
+                    idSuffix: "5592",
+                    label: "u***5@example.invalid",
+                    email: "u***5@example.invalid",
+                    isActive: true,
+                    quota: OpenCodexHubQuota(
+                        fiveHour: OpenCodexHubQuotaWindow(usedPercent: fiveHour, resetsAt: nil),
+                        weekly: OpenCodexHubQuotaWindow(usedPercent: weekly, resetsAt: nil))),
+            ],
+            switchable: true,
+            origin: origin)
+    }
+
+    @Test
+    func `a stale hub snapshot is shown as stale, never as current usage`() throws {
+        let fixture = try self.makeFixture()
+        defer { fixture.cleanup() }
+        let now = Date()
+        let old = now.addingTimeInterval(-3 * 24 * 60 * 60)
+        fixture.store.applyOpenCodexHubPool(
+            Self.anthropicPool(fiveHour: 0, weekly: 100, origin: .snapshot(hubName: "hub-mac", updatedAt: old)),
+            provider: .claude,
+            now: now)
+
+        let snapshot = try #require(fixture.store.snapshots[UsageProvider.claude.instanceID])
+        #expect(snapshot.secondary?.usedPercent == 100)
+        #expect(fixture.store.isStale(provider: .claude))
+    }
+
+    @Test
+    func `a stale hub snapshot does not replace the pool read live on the hub`() throws {
+        let fixture = try self.makeFixture()
+        defer { fixture.cleanup() }
+        let now = Date()
+        fixture.store.applyOpenCodexHubPool(
+            Self.anthropicPool(fiveHour: 14, weekly: 44, origin: .hubLocal),
+            provider: .claude,
+            now: now)
+        #expect(!fixture.store.isStale(provider: .claude))
+
+        // `ocx` did not answer this pass, so the reader fell back to a snapshot the hub stopped rewriting.
+        let old = now.addingTimeInterval(-3 * 24 * 60 * 60)
+        fixture.store.applyOpenCodexHubPool(
+            Self.anthropicPool(fiveHour: 0, weekly: 100, origin: .snapshot(hubName: "hub-mac", updatedAt: old)),
+            provider: .claude,
+            now: now)
+
+        let snapshot = try #require(fixture.store.snapshots[UsageProvider.claude.instanceID])
+        #expect(snapshot.primary?.usedPercent == 14)
+        #expect(snapshot.secondary?.usedPercent == 44)
+        #expect(fixture.store.openCodexHubCardState(for: .claude)?.pool?.isHubLocal == true)
+        #expect(fixture.store.isStale(provider: .claude))
+
+        // The next live read clears the stale mark.
+        fixture.store.applyOpenCodexHubPool(
+            Self.anthropicPool(fiveHour: 15, weekly: 44, origin: .hubLocal),
+            provider: .claude,
+            now: now)
+        #expect(fixture.store.snapshots[UsageProvider.claude.instanceID]?.primary?.usedPercent == 15)
+        #expect(!fixture.store.isStale(provider: .claude))
+    }
 }

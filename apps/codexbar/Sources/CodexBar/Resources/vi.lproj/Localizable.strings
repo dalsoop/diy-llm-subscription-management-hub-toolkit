@@ -1858,6 +1858,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "Hồ sơ AWS được đặt tên từ ~/.aws/config. Cũng có thể được đặt bằng AWS_PROFILE.";
 "Next provider" = "Nhà cung cấp tiếp theo";
 "No active account" = "Không có tài khoản đang hoạt động";
+"The opencodex hub snapshot is out of date" = "Ảnh chụp nhanh của hub opencodex đã cũ";
 "No cookie header pasted." = "Không có tiêu đề cookie nào được dán.";
 "No matching OpenAI web session found for %@." = "Không tìm thấy phiên web OpenAI phù hợp cho %@.";
 "No matching OpenAI web session found." = "Không tìm thấy phiên web OpenAI phù hợp.";

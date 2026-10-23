@@ -1860,6 +1860,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "~/.aws/config adresinden AWS profili adlandırıldı. AWS_PROFILE ile de ayarlanabilir.";
 "Next provider" = "Sonraki sağlayıcı";
 "No active account" = "Aktif hesap yok";
+"The opencodex hub snapshot is out of date" = "opencodex hub anlık görüntüsü güncel değil";
 "No cookie header pasted." = "cookie başlığı yapıştırılmadı.";
 "No matching OpenAI web session found for %@." = "%@ için eşleşen OpenAI web oturumu bulunamadı.";
 "No matching OpenAI web session found." = "Eşleşen OpenAI web oturumu bulunamadı.";

@@ -1857,6 +1857,7 @@
 "Named AWS profile from ~/.aws/config. Can also be set with AWS_PROFILE." = "Названий профіль AWS із ~/.aws/config. Також можна встановити за допомогою AWS_PROFILE.";
 "Next provider" = "Наступний провайдер";
 "No active account" = "Немає активного облікового запису";
+"The opencodex hub snapshot is out of date" = "Знімок хаба opencodex застарів";
 "No cookie header pasted." = "Заголовок cookie не вставлено.";
 "No matching OpenAI web session found for %@." = "Для %@ не знайдено відповідної веб-сесії OpenAI.";
 "No matching OpenAI web session found." = "Відповідної веб-сесії OpenAI не знайдено.";
