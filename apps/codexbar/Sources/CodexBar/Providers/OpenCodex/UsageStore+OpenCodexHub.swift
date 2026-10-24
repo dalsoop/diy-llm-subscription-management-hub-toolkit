@@ -26,6 +26,7 @@ extension UsageStore {
     /// knows the native sources. While the Codex card reads the hub, that bookkeeping neither runs nor clears
     /// the hub card: the hub's snapshot has no local Codex owner, so the owner check would always discard it,
     /// and the native credits read behind an opencodex proxy only fails ("configured for a custom provider").
+    /// Provider-specific by design: Hub cards suppress Codex owner/credit checks and Claude's duplicate hub adapter.
     var codexCardReadsOpenCodexHub: Bool {
         self.usesOpenCodexHub(for: .codex)
     }

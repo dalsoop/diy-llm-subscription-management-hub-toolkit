@@ -6,7 +6,7 @@ import Foundation
 extension SettingsStore {
     /// The providers whose card can read an opencodex hub pool through these settings. The hub pool is what the
     /// hub routes to; the provider's own sources behind an opencodex proxy read another login or none.
-    static let openCodexHubCardProviders: [UsageProvider] = [.claude, .codex, .grok]
+    static let openCodexHubCardProviders: [UsageProvider] = OpenCodexHubProvider.allCases.map(\.usageProvider)
 
     func openCodexHubEnabled(for provider: UsageProvider) -> Bool {
         guard Self.openCodexHubCardProviders.contains(provider) else { return false }
@@ -52,6 +52,7 @@ extension SettingsStore {
             value: path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "cleared" : "set")
     }
 
+    /// Provider-specific by design: SwiftUI key paths need typed Codex/Grok bindings to shared provider config storage.
     var codexOpenCodexHubEnabled: Bool {
         get { self.openCodexHubEnabled(for: .codex) }
         set { self.setOpenCodexHubEnabled(newValue, for: .codex) }

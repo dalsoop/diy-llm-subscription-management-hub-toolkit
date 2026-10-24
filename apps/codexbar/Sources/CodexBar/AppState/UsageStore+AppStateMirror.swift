@@ -98,7 +98,10 @@ extension UsageStore {
             }
             if error == nil { error = card?.lastError }
             lastRefreshAt = Self.latest(lastRefreshAt, card?.lastRefreshAt)
-        } else if provider == .claude, self.settings.claudeSwapEnabled {
+        } else if
+            // Provider-specific by design: Claude swap snapshots describe only the native Claude account adapter.
+            provider == .claude, self.settings.claudeSwapEnabled
+        {
             accountSource = self.settings.claudeSwapSource.rawValue
             accountError = self.claudeSwapLastError
             accounts = self.claudeSwapAccountSnapshots.map { account in
@@ -115,7 +118,10 @@ extension UsageStore {
                 hubRole = "hub"
             }
             lastRefreshAt = Self.latest(lastRefreshAt, self.claudeSwapLastRefreshAt)
-        } else if provider == .codex, !self.codexAccountSnapshots.isEmpty {
+        } else if
+            // Provider-specific by design: Managed Codex profile snapshots cannot identify another provider's accounts.
+            provider == .codex, !self.codexAccountSnapshots.isEmpty
+        {
             accountSource = "codex-accounts"
             accounts = self.codexAccountSnapshots.map { account in
                 CodexBarAppStateMirror.Account(

@@ -45,6 +45,7 @@ extension StatusItemController {
                     active: account.isActive)
             }
         }
+        // Provider-specific by design: Managed Codex profiles own this inventory and its account-identity checks.
         if provider == .codex,
            let projection = self.settings.codexVisibleAccountProjectionForMenuDisplay,
            projection.visibleAccounts.count > 1

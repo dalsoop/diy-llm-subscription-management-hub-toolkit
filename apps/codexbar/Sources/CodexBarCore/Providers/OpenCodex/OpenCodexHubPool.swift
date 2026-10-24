@@ -7,6 +7,7 @@ public enum OpenCodexHubProvider: String, CaseIterable, Sendable, Codable {
     case xai
 
     /// The CodexBar provider whose card shows this pool.
+    /// Provider-specific by design: Hub vendor IDs must map to matching product card IDs in both directions.
     public var usageProvider: UsageProvider {
         switch self {
         case .anthropic: .claude

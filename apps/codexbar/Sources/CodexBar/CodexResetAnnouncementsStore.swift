@@ -94,6 +94,7 @@ final class CodexResetAnnouncementsStore {
 }
 
 extension SettingsStore {
+    /// Provider-specific by design: Public Codex reset feeds and their settings apply only to Codex quota events.
     var codexResetAnnouncementsEnabled: Bool {
         get { self.providerConfig(for: .codex)?.codexResetAnnouncementsEnabled ?? false }
         set {
