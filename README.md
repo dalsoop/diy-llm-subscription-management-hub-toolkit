@@ -28,6 +28,13 @@ diy-llm-subscription-management-hub-toolkit/
 * 로그인 없이도 OpenAI Codex 및 Claude Code 잔여 쿼터/사용량 실시간 시각화
 * 5시간 주기 리셋, 주간/월간 한도 및 소진 예측 페이스 알림
 * 다중 프로바이더 상태 및 세션 헬스체크 메뉴 제공
+* 계정마다 별도 사용량 미니 바 표시, 중지된 허브 등록 항목은 카드와 바에서 함께 제외
+* 프로바이더 전환과 메뉴 캐시 재사용 시 실제 메뉴 폭에 맞춰 카드·탭 정렬
+* Codex 설정의 **Provider URL**로 공개 리셋 소식 제공자 지정, 프로바이더당 한 번 표시
+
+CodexBar 변경은 이 저장소의 `apps/codexbar`에서 관리합니다. 자세한 동작은
+[계정별 바](apps/codexbar/docs/provider-switcher-accounts.md)와
+[공개 리셋 소식](apps/codexbar/docs/reset-announcements.md)을 참고하세요.
 
 ---
 
@@ -50,7 +57,9 @@ cd apps/codexbar
 
 # Swift Package Manager를 통한 빌드 및 테스트
 swift build -c release
-swift test
+# 메모리 설정·합성 홈·Keychain 접근 억제를 적용하는 저장소 테스트 실행기
+make test
+make check
 ```
 
 ---

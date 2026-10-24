@@ -107,20 +107,25 @@ extension StatusItemController {
     {
         let snapshot = self.store.snapshots[plugin.manifest.id]
         let error = self.store.errors[plugin.manifest.id]
+        let isRefreshing = self.store.refreshingProviders.contains(plugin.manifest.id)
+        let showUsed = self.settings.usageBarsShowUsed
+        let onRefresh: () -> Void = { [weak self] in
+            self?.startManualRefresh(
+                for: plugin.manifest.id,
+                originatingMenuID: nil,
+                originatingMenuInteractionGeneration: nil)
+        }
         return self.makeMenuCardItem(
-            UserPluginMenuCardView(
-                plugin: plugin,
-                snapshot: snapshot,
-                error: error,
-                isRefreshing: self.store.refreshingProviders.contains(plugin.manifest.id),
-                showUsed: self.settings.usageBarsShowUsed,
-                width: width,
-                onRefresh: { [weak self] in
-                    self?.startManualRefresh(
-                        for: plugin.manifest.id,
-                        originatingMenuID: nil,
-                        originatingMenuInteractionGeneration: nil)
-                }),
+            { resolvedWidth in
+                UserPluginMenuCardView(
+                    plugin: plugin,
+                    snapshot: snapshot,
+                    error: error,
+                    isRefreshing: isRefreshing,
+                    showUsed: showUsed,
+                    width: resolvedWidth,
+                    onRefresh: onRefresh)
+            },
             id: id ?? "pluginCard:\(plugin.manifest.id.rawValue)",
             width: width,
             heightCacheScope: plugin.manifest.id.rawValue,

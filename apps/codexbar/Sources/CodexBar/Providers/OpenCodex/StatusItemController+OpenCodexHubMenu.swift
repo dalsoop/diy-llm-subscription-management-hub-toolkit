@@ -16,32 +16,32 @@ final class OpenCodexHubMenuSelection: NSObject {
 
 extension StatusItemController {
     /// Adds the hub rows when the card reads an opencodex hub pool.
-    func addOpenCodexHubMenuItemsIfNeeded(provider: UsageProvider, to menu: NSMenu) {
+    func addOpenCodexHubMenuItemsIfNeeded(provider: UsageProvider, to menu: NSMenu, width: CGFloat) {
         guard self.store.usesOpenCodexHub(for: provider) else { return }
-        self.addOpenCodexHubMenuItems(provider: provider, to: menu)
+        self.addOpenCodexHubMenuItems(provider: provider, to: menu, width: width)
     }
 
     /// Notices and the account switcher of a Codex or Grok card that reads an opencodex hub pool. The
     /// active account's quota renders as the provider card below these rows.
-    func addOpenCodexHubMenuItems(provider: UsageProvider, to menu: NSMenu) {
+    func addOpenCodexHubMenuItems(provider: UsageProvider, to menu: NSMenu, width: CGFloat) {
         guard let state = self.store.openCodexHubCardState(for: provider) else {
-            self.addOpenCodexHubNotice(L("Reading the opencodex hub…"), to: menu)
+            self.addOpenCodexHubNotice(L("Reading the opencodex hub…"), to: menu, width: width)
             return
         }
         guard let pool = state.pool else {
             if let error = state.lastError {
-                self.addOpenCodexHubNotice(error, to: menu)
+                self.addOpenCodexHubNotice(error, to: menu, width: width)
             }
             return
         }
         for line in OpenCodexHubPresentation.poolNotices(pool) {
-            self.addOpenCodexHubNotice(line, to: menu)
+            self.addOpenCodexHubNotice(line, to: menu, width: width)
         }
         if let error = state.lastError {
-            self.addOpenCodexHubNotice(error, to: menu)
+            self.addOpenCodexHubNotice(error, to: menu, width: width)
         }
         for line in state.switchStatus.menuLines(hidePersonalInfo: self.settings.hidePersonalInfo) {
-            self.addOpenCodexHubNotice(line, to: menu)
+            self.addOpenCodexHubNotice(line, to: menu, width: width)
         }
         // Several accounts render as account cards or tabs (`addOpenCodexHubAccountCards`), which carry the
         // switch action; the submenu remains for a single-account pool.
@@ -73,7 +73,8 @@ extension StatusItemController {
             submenu.addItem(.separator())
             self.addOpenCodexHubNotice(
                 pool.switchReason ?? OpenCodexHubPresentation.defaultSwitchReason(hubName: pool.hubName),
-                to: submenu)
+                to: submenu,
+                width: width)
         }
         submenu.autoenablesItems = false
         switcher.submenu = submenu
@@ -112,10 +113,10 @@ extension StatusItemController {
         }
     }
 
-    func addOpenCodexHubNotice(_ text: String, to menu: NSMenu) {
-        let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
-        item.isEnabled = false
-        menu.addItem(item)
+    func addOpenCodexHubNotice(_ text: String, to menu: NSMenu, width: CGFloat) {
+        // A native one-line title expands the popup while hosted cards keep their proposed width.
+        // Use the shared wrapping row so notices respect the same width as the provider content.
+        menu.addItem(self.makeWrappedSecondaryTextItem(text: text, width: width))
     }
 }
 

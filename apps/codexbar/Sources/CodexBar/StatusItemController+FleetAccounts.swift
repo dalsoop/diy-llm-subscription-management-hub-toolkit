@@ -44,7 +44,9 @@ extension StatusItemController {
         for (index, snapshot) in snapshots.enumerated() {
             guard let model = self.fleetAccountMenuCardModel(snapshot) else { continue }
             menu.addItem(self.makeMenuCardItem(
-                FleetAccountMenuCardView(model: model, width: context.menuWidth),
+                { resolvedWidth in
+                    FleetAccountMenuCardView(model: model, width: resolvedWidth)
+                },
                 id: "fleetAccount-\(snapshot.accountKey)",
                 width: context.menuWidth,
                 heightCacheScope: "fleet-\(context.currentProvider.rawValue)-\(snapshot.accountKey)",

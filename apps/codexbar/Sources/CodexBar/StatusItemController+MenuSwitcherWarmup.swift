@@ -83,7 +83,8 @@ extension StatusItemController {
         let menuWidth = self.menuCardWidth(
             for: enabledProviders,
             selectedProvider: selectedProvider,
-            descriptor: descriptor)
+            descriptor: descriptor,
+            renderedMenu: menu)
         guard self.reusableMergedSwitcherContent(
             for: selection,
             in: menu,

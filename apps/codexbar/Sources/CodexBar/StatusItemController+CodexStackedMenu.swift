@@ -26,7 +26,9 @@ extension StatusItemController {
                     accountSnapshot: snapshotsByAccountID[account.id])
                 guard let model else { continue }
                 menu.addItem(self.makeMenuCardItem(
-                    UsageMenuCardView(model: model, width: context.menuWidth),
+                    { resolvedWidth in
+                        UsageMenuCardView(model: model, width: resolvedWidth)
+                    },
                     id: "menuCard-\(cardIndex)",
                     width: context.menuWidth,
                     heightCacheScope: account.id,
@@ -45,7 +47,9 @@ extension StatusItemController {
 
         if cardIndex == 0, let model = self.menuCardModel(for: context.selectedProvider) {
             menu.addItem(self.makeMenuCardItem(
-                UsageMenuCardView(model: model, width: context.menuWidth),
+                { resolvedWidth in
+                    UsageMenuCardView(model: model, width: resolvedWidth)
+                },
                 id: "menuCard",
                 width: context.menuWidth,
                 heightCacheScope: context.currentProvider.rawValue,
@@ -87,10 +91,12 @@ extension StatusItemController {
         menu.addItem(scope)
         if let dashboard = model.inlineUsageDashboard {
             menu.addItem(self.makeMenuCardItem(
-                InlineUsageDashboardContent(model: dashboard)
-                    .padding(.horizontal, UsageMenuCardLayout.horizontalPadding)
-                    .padding(.vertical, 6)
-                    .frame(width: context.menuWidth),
+                { resolvedWidth in
+                    InlineUsageDashboardContent(model: dashboard)
+                        .padding(.horizontal, UsageMenuCardLayout.horizontalPadding)
+                        .padding(.vertical, 6)
+                        .frame(width: resolvedWidth)
+                },
                 id: "sharedCodexInlineCost",
                 width: context.menuWidth,
                 heightCacheScope: provider.rawValue,

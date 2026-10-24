@@ -108,7 +108,11 @@ extension StatusItemController {
         let dashboard = self.store.openAIDashboard
         let dashboardUsageBreakdown = OpenAIDashboardDailyBreakdown.removingSkillUsageServices(
             from: dashboard?.usageBreakdown ?? [])
+        let resetNews = CodexResetAnnouncementsPresentation.make(
+            store: self.store.codexResetAnnouncements,
+            now: Date())
         var parts = [
+            "resetNews=\(resetNews?.heightFingerprint ?? "disabled")",
             "costEnabled=\(self.settings.costUsageEnabled ? "1" : "0")",
             "codexLocalCost=\(self.settings.codexLocalSessionCostLedgerEnabled ? "1" : "0")",
             "costStyle=\(self.settings.costSummaryDisplayStyle.rawValue)",
@@ -124,12 +128,17 @@ extension StatusItemController {
 
         for provider in self.store.enabledFirstPartyProvidersForDisplay() {
             let tokenSignature = self.tokenSnapshotReadinessSignature(for: provider)
+            let accountQuotas = self.switcherAccountQuotas(for: provider.instanceID).map {
+                "\($0.id.count):\($0.id):\($0.percent.map(String.init(describing:)) ?? "unknown"):\($0.isActive)"
+            }.joined(separator: "|")
             let usageHistoryVisible = self.store.supportsPlanUtilizationHistory(for: provider) &&
                 !self.store.shouldHidePlanUtilizationMenuItem(for: provider)
             parts.append(
                 [
                     provider.rawValue,
                     "token=\(tokenSignature)",
+                    "switcherAccounts=\(accountQuotas)",
+                    "hubPending=\(self.store.openCodexHubCardState(for: provider)?.switchStatus.isPending == true)",
                     "statusComponents=\(self.statusComponentsRenderSignature(for: provider))",
                     "refreshing=\(self.store.shouldShowRefreshingMenuCardIndicator(for: provider) ? "1" : "0")",
                     "usageHistory=\(usageHistoryVisible ? "1" : "0")",

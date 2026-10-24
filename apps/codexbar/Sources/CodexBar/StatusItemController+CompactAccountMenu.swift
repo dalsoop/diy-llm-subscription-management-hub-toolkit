@@ -124,10 +124,12 @@ extension StatusItemController {
                     self?.toggleCompactAccountExpansion(accountID, menu: captureMenu)
                 }
                 menu.addItem(self.makeMenuCardItem(
-                    UsageMenuCardView(
-                        model: model,
-                        width: context.menuWidth,
-                        planAction: planAction?(account)),
+                    { resolvedWidth in
+                        UsageMenuCardView(
+                            model: model,
+                            width: resolvedWidth,
+                            planAction: planAction?(account))
+                    },
                     id: "\(idPrefix)Card-\(accountID.opaqueID)",
                     width: context.menuWidth,
                     heightCacheScope: "\(idPrefix)-card-\(accountID.opaqueID)",
@@ -146,10 +148,12 @@ extension StatusItemController {
                     privacyOrdinal: accountsByID[compactRow.accountID].flatMap { rendering.privacyOrdinal?($0) })
                 let accountID = compactRow.accountID
                 menu.addItem(self.makeMenuCardItem(
-                    MenuCardCompactAccountRowView(
-                        model: rowModel,
-                        progressColor: progressColor,
-                        width: context.menuWidth),
+                    { resolvedWidth in
+                        MenuCardCompactAccountRowView(
+                            model: rowModel,
+                            progressColor: progressColor,
+                            width: resolvedWidth)
+                    },
                     id: "\(idPrefix)Compact-\(accountID.opaqueID)",
                     width: context.menuWidth,
                     heightCacheScope: "\(idPrefix)-compact-\(accountID.opaqueID)",
@@ -159,9 +163,10 @@ extension StatusItemController {
                     }))
                 previousRowWasCard = false
             case let .collapsedHealthy(count):
-                let view = MenuCardCollapsedAccountsRowView(count: count, width: context.menuWidth)
                 menu.addItem(self.makeMenuCardItem(
-                    view,
+                    { resolvedWidth in
+                        MenuCardCollapsedAccountsRowView(count: count, width: resolvedWidth)
+                    },
                     id: "\(idPrefix)Collapsed",
                     width: context.menuWidth,
                     heightCacheScope: "\(idPrefix)-collapsed",
@@ -191,7 +196,9 @@ extension StatusItemController {
         if cards.isEmpty, let model = self.menuCardModel(for: context.selectedProvider) {
             let renderedModel = self.menuCardRefreshMonitor.model(for: model.provider, fallback: model)
             menu.addItem(self.makeMenuCardItem(
-                UsageMenuCardView(model: model, layoutModel: renderedModel, width: context.menuWidth),
+                { resolvedWidth in
+                    UsageMenuCardView(model: model, layoutModel: renderedModel, width: resolvedWidth)
+                },
                 id: "menuCard",
                 width: context.menuWidth,
                 heightCacheScope: context.currentProvider.rawValue,
@@ -201,10 +208,12 @@ extension StatusItemController {
         } else {
             for (index, model) in cards.enumerated() {
                 menu.addItem(self.makeMenuCardItem(
-                    UsageMenuCardView(
-                        model: model,
-                        width: context.menuWidth,
-                        planAction: planAction?(index)),
+                    { resolvedWidth in
+                        UsageMenuCardView(
+                            model: model,
+                            width: resolvedWidth,
+                            planAction: planAction?(index))
+                    },
                     id: "menuCard-\(index)",
                     width: context.menuWidth,
                     heightCacheScope: "\(context.currentProvider.rawValue)-\(index)",

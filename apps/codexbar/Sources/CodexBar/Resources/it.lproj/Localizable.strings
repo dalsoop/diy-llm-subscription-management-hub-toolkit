@@ -2745,3 +2745,27 @@
 "Read accounts from an opencodex hub" = "Leggi gli account da un hub opencodex";
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Mostra gli account e i limiti di questo fornitore da un hub opencodex invece che dalle sue fonti. Sull’hub CodexBar cambia account tramite `ocx`; gli altri Mac leggono il file di istantanea dell’hub e gli chiedono di cambiare. Le credenziali restano sull’hub; CodexBar non le legge mai.";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Mostra gli account Claude di un hub opencodex. Sull’hub CodexBar cambia l’account attivo del gruppo tramite `ocx`; gli altri Mac leggono il file di istantanea dell’hub e gli chiedono di cambiare. Le credenziali restano sull’hub; CodexBar non le legge mai.";
+
+/* Public Codex reset announcements. */
+"reset_news_title" = "Notizie sui ripristini di Codex";
+"reset_news_help" = "Mostra le segnalazioni pubbliche dei ripristini nel menu Codex. Controlla ogni cinque minuti quando attivo; nessun accesso agli account viene condiviso.";
+"reset_news_provider_url" = "URL del fornitore";
+"reset_news_url_help" = "Endpoint JSON HTTPS completo di codex-resets.com, tokenusage.dev, codexreset.ai o di un fornitore compatibile. Lascia vuoto per ripristinare il valore predefinito.";
+"reset_news_save" = "Salva URL e controlla";
+"reset_news_loading" = "Controllo delle notizie sui ripristini…";
+"reset_news_invalid_url" = "Inserisci un URL HTTPS senza credenziali, query o frammenti.";
+"reset_news_unsupported" = "Questo URL non ha restituito un feed di ripristini supportato.";
+"reset_news_unavailable" = "Le notizie sui ripristini non sono disponibili. I dati recuperati in precedenza potrebbero non essere aggiornati.";
+"reset_news_retry_later" = "Il fornitore ha chiesto di riprovare più tardi.";
+"reset_news_checked" = "Ultimo controllo: %@";
+"reset_news_data_time" = "Fonte aggiornata: %@";
+"reset_news_latest" = "Ultimo ripristino segnalato";
+"reset_news_observed" = "Ultimo ripristino osservato";
+"reset_news_banked" = "Ultimo credito di ripristino accumulato";
+"reset_news_announced" = "Ultimo annuncio di ripristino";
+"reset_news_scheduled" = "Ripristino programmato · in attesa di conferma";
+"reset_news_awaiting" = "In attesa della conferma di esecuzione";
+"reset_news_outlook" = "Previsioni di ripristino · non ufficiali";
+"reset_news_stale" = "I dati potrebbero non essere aggiornati";
+"reset_news_attribution" = "Dati da %@";
+"reset_news_disclaimer" = "Segnalazioni della comunità. Controlla i limiti effettivi nel tuo account.";

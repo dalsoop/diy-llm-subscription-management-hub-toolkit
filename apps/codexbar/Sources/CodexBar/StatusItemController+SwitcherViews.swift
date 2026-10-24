@@ -15,18 +15,29 @@ final class ProviderSwitcherView: NSView {
     }
 
     fileprivate struct QuotaIndicator {
+        let accountID: String
         let track: NSView
         let fill: NSView
         var fillWidthConstraint: NSLayoutConstraint
         var fillRatio: CGFloat
+        let bottomConstraint: NSLayoutConstraint
     }
 
     private let segments: [Segment]
     private let onSelect: (ProviderSwitcherSelection) -> Void
     private let showsIcons: Bool
     private let weeklyRemainingProvider: (ProviderInstanceID) -> Double?
+    private let accountQuotaProvider: ((ProviderInstanceID) -> [ProviderSwitcherAccountQuota])?
     private var buttons: [NSButton] = []
-    private var quotaIndicators: [ObjectIdentifier: QuotaIndicator] = [:]
+    private var quotaIndicators: [ObjectIdentifier: [QuotaIndicator]] = [:]
+    private var reservedQuotaCount = 1
+    private(set) var requiresMenuRowReplacement = false
+    private var buttonHeightConstraints: [NSLayoutConstraint] = []
+    private var rowHeightConstraints: [NSLayoutConstraint] = []
+    private var leadingLayouts: [(constraint: NSLayoutConstraint, offset: CGFloat, column: Int)] = []
+    private var horizontalLayoutWidths: [CGFloat] = []
+    private var horizontalOuterPadding: CGFloat = 0
+    private var horizontalMinimumGap: CGFloat = 1
     private var hoverTrackingArea: NSTrackingArea?
     private var segmentWidths: [CGFloat] = []
     private let selectedBackground = NSColor.controlAccentColor.cgColor
@@ -36,7 +47,7 @@ final class ProviderSwitcherView: NSView {
     private let stackedIcons: Bool
     private let rowCount: Int
     private let rowSpacing: CGFloat
-    private let rowHeight: CGFloat
+    private var rowHeight: CGFloat
     private var preferredWidth: CGFloat = 0
     private var hoveredButtonTag: Int?
     private var pressedButtonTag: Int?
@@ -55,6 +66,7 @@ final class ProviderSwitcherView: NSView {
         iconProvider: (UsageProvider) -> NSImage,
         pluginIconProvider: (UserProviderPlugin) -> NSImage = { _ in NSImage() },
         weeklyRemainingProvider: @escaping (ProviderInstanceID) -> Double?,
+        accountQuotaProvider: ((ProviderInstanceID) -> [ProviderSwitcherAccountQuota])? = nil,
         onSelect: @escaping (ProviderSwitcherSelection) -> Void)
     {
         let minimumGap: CGFloat = 1
@@ -90,6 +102,7 @@ final class ProviderSwitcherView: NSView {
         self.onSelect = onSelect
         self.showsIcons = showsIcons
         self.weeklyRemainingProvider = weeklyRemainingProvider
+        self.accountQuotaProvider = accountQuotaProvider
         self.stackedIcons = showsIcons && self.segments.count > 3
         let initialOuterPadding = Self.switcherOuterPadding(
             for: width,
@@ -106,7 +119,14 @@ final class ProviderSwitcherView: NSView {
             maxAllowedSegmentWidth: initialMaxAllowedSegmentWidth,
             stackedIcons: self.stackedIcons)
         self.rowSpacing = self.stackedIcons ? 4 : 2
+        self.reservedQuotaCount = max(1, segments.map {
+            Self.quotas(
+                for: $0.selection,
+                weekly: weeklyRemainingProvider,
+                accounts: accountQuotaProvider).count
+        }.max() ?? 0)
         self.rowHeight = Self.switcherButtonHeight(stackedIcons: self.stackedIcons, rowCount: self.rowCount)
+            + Self.extraQuotaHeight(count: self.reservedQuotaCount)
         let height: CGFloat = self.rowHeight * CGFloat(self.rowCount)
             + self.rowSpacing * CGFloat(max(0, self.rowCount - 1))
         self.preferredWidth = width
@@ -115,67 +135,13 @@ final class ProviderSwitcherView: NSView {
         self.wantsLayer = true
         self.layer?.masksToBounds = false
 
-        func makeButton(index: Int, segment: Segment) -> NSButton {
-            let button: NSButton
-            if self.stackedIcons {
-                let stacked = StackedToggleButton(
-                    title: segment.title,
-                    image: segment.image,
-                    target: self,
-                    action: #selector(self.handleSelection(_:)))
-                if self.rowCount >= 4 {
-                    stacked.setTitleFontSize(NSFont.smallSystemFontSize - 3)
-                }
-                button = stacked
-            } else if self.showsIcons {
-                let inline = InlineIconToggleButton(
-                    title: segment.title,
-                    image: segment.image,
-                    target: self,
-                    action: #selector(self.handleSelection(_:)))
-                button = inline
-            } else {
-                button = PaddedToggleButton(
-                    title: segment.title,
-                    target: self,
-                    action: #selector(self.handleSelection(_:)))
-            }
-            button.tag = index
-            if self.showsIcons {
-                if self.stackedIcons {
-                    // StackedToggleButton manages its own image view.
-                } else {
-                    // InlineIconToggleButton manages its own image view.
-                }
-            } else {
-                button.image = nil
-                button.imagePosition = .noImage
-            }
-
-            button.bezelStyle = .regularSquare
-            button.isBordered = false
-            button.controlSize = .small
-            button.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-            button.setButtonType(.toggle)
-            button.contentTintColor = self.unselectedTextColor
-            button.alignment = .center
-            button.wantsLayer = true
-            button.layer?.cornerRadius = 6
-            button.state = (selected == segment.selection) ? .on : .off
-            button.toolTip = nil
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.heightAnchor.constraint(equalToConstant: self.rowHeight).isActive = true
-            self.buttons.append(button)
-            return button
-        }
-
         for (index, segment) in self.segments.enumerated() {
-            let button = makeButton(index: index, segment: segment)
+            let button = self.makeButton(index: index, segment: segment, selected: selected)
             self.addSubview(button)
-            self.addQuotaIndicator(
+            self.addQuotaIndicators(
                 to: button,
                 selection: segment.selection,
-                remainingPercent: self.remainingPercent(for: segment.selection))
+                quotas: self.quotas(for: segment.selection))
         }
         self.selectedSegmentIndex = selected.flatMap { selected in
             self.segments.firstIndex { $0.selection == selected }
@@ -357,6 +323,8 @@ final class ProviderSwitcherView: NSView {
         minimumGap: CGFloat,
         uniformWidth: CGFloat)
     {
+        self.horizontalOuterPadding = outerPadding
+        self.horizontalMinimumGap = minimumGap
         if self.rowCount > 1 {
             self.applyMultiRowLayout(
                 rowCount: self.rowCount,
@@ -411,6 +379,7 @@ final class ProviderSwitcherView: NSView {
                 ? self.buttons.map { ceil($0.fittingSize.width) }
                 : self.segmentWidths
             let layoutWidth = self.preferredWidth > 0 ? self.preferredWidth : self.bounds.width
+            self.horizontalLayoutWidths = widths
             let availableWidth = max(0, layoutWidth - outerPadding * 2)
             let gaps = max(1, widths.count - 1)
             let computedGap = gaps > 0
@@ -430,14 +399,16 @@ final class ProviderSwitcherView: NSView {
             var xOffset: CGFloat = 0
             for (index, button) in self.buttons.enumerated() {
                 let width = index < widths.count ? widths[index] : 0
+                let leading = button.leadingAnchor.constraint(equalTo: rowContainer.leadingAnchor, constant: xOffset)
+                self.leadingLayouts.append((leading, widths.prefix(index).reduce(0, +), index))
                 if self.stackedIcons {
                     NSLayoutConstraint.activate([
-                        button.leadingAnchor.constraint(equalTo: rowContainer.leadingAnchor, constant: xOffset),
+                        leading,
                         button.topAnchor.constraint(equalTo: rowContainer.topAnchor),
                     ])
                 } else {
                     NSLayoutConstraint.activate([
-                        button.leadingAnchor.constraint(equalTo: rowContainer.leadingAnchor, constant: xOffset),
+                        leading,
                         button.centerYAnchor.constraint(equalTo: rowContainer.centerYAnchor),
                     ])
                 }
@@ -463,6 +434,7 @@ final class ProviderSwitcherView: NSView {
         let rows = Self.splitRows(for: self.buttons, rowCount: rowCount)
         let columns = rows.map(\.count).max() ?? 0
         let layoutWidth = self.preferredWidth > 0 ? self.preferredWidth : self.bounds.width
+        self.horizontalLayoutWidths = Array(repeating: uniformWidth, count: columns)
         let availableWidth = max(0, layoutWidth - outerPadding * 2)
         let gaps = max(1, columns - 1)
         let totalWidth = uniformWidth * CGFloat(columns)
@@ -492,7 +464,9 @@ final class ProviderSwitcherView: NSView {
         for (index, row) in rowViews.enumerated() {
             rowConstraints.append(row.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor))
             rowConstraints.append(row.trailingAnchor.constraint(equalTo: gridContainer.trailingAnchor))
-            rowConstraints.append(row.heightAnchor.constraint(equalToConstant: self.rowHeight))
+            let heightConstraint = row.heightAnchor.constraint(equalToConstant: self.rowHeight)
+            self.rowHeightConstraints.append(heightConstraint)
+            rowConstraints.append(heightConstraint)
             if index == 0 {
                 rowConstraints.append(row.topAnchor.constraint(equalTo: gridContainer.topAnchor))
             } else {
@@ -511,8 +485,10 @@ final class ProviderSwitcherView: NSView {
             let rowView = rowViews[rowIndex]
             for (columnIndex, button) in rowButtons.enumerated() {
                 let xOffset = CGFloat(columnIndex) * (uniformWidth + computedGap)
+                let leading = button.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor, constant: xOffset)
+                self.leadingLayouts.append((leading, CGFloat(columnIndex) * uniformWidth, columnIndex))
                 NSLayoutConstraint.activate([
-                    button.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor, constant: xOffset),
+                    leading,
                     button.centerYAnchor.constraint(equalTo: rowView.centerYAnchor),
                 ])
             }
@@ -624,6 +600,22 @@ final class ProviderSwitcherView: NSView {
         nil
     }
 
+    override func setFrameSize(_ newSize: NSSize) {
+        let widthChanged = abs(newSize.width - self.preferredWidth) > 0.5
+        super.setFrameSize(newSize)
+        guard widthChanged, newSize.width > 0 else { return }
+        self.preferredWidth = newSize.width
+        let available = max(0, newSize.width - self.horizontalOuterPadding * 2)
+        let gap = max(
+            self.horizontalMinimumGap,
+            (available - self.horizontalLayoutWidths.reduce(0, +)) /
+                CGFloat(max(1, self.horizontalLayoutWidths.count - 1)))
+        for leading in self.leadingLayouts {
+            leading.constraint.constant = leading.offset + CGFloat(leading.column) * gap
+        }
+        self.invalidateIntrinsicContentSize()
+    }
+
     override var intrinsicContentSize: NSSize {
         NSSize(width: self.preferredWidth, height: self.frame.size.height)
     }
@@ -639,53 +631,6 @@ final class ProviderSwitcherView: NSView {
         }
         self.selectedSegmentIndex = selectedIndex
         self.updateButtonStyles()
-    }
-
-    func updateQuotaIndicators() {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        defer { CATransaction.commit() }
-
-        for (index, button) in self.buttons.enumerated() {
-            guard self.segments.indices.contains(index) else { continue }
-            let segment = self.segments[index]
-            let remaining = self.remainingPercent(for: segment.selection)
-
-            let key = ObjectIdentifier(button)
-            if let remaining {
-                if var indicator = self.quotaIndicators[key] {
-                    let newRatio = Self.quotaIndicatorRatio(remainingPercent: remaining)
-                    if newRatio != indicator.fillRatio {
-                        Self.updateQuotaIndicatorFill(
-                            indicator: &indicator,
-                            remainingPercent: remaining,
-                            selection: segment.selection)
-                        self.quotaIndicators[key] = indicator
-                    } else {
-                        // The switcher view outlives a menu update, so refresh the color even when the
-                        // ratio holds. A new accent color must not wait for usage to move.
-                        indicator.fill.layer?.backgroundColor = Self.quotaIndicatorColor(
-                            for: segment.selection,
-                            remainingPercent: remaining).cgColor
-                    }
-                } else {
-                    self.addQuotaIndicator(to: button, selection: segment.selection, remainingPercent: remaining)
-                }
-            } else if let indicator = self.quotaIndicators.removeValue(forKey: key) {
-                indicator.track.removeFromSuperview()
-                continue
-            }
-            self.updateQuotaIndicatorVisibility(for: button)
-        }
-    }
-
-    private func remainingPercent(for selection: ProviderSwitcherSelection) -> Double? {
-        switch selection {
-        case let .provider(instanceID):
-            self.weeklyRemainingProvider(instanceID)
-        case .overview:
-            nil
-        }
     }
 
     @objc private func handleSelection(_ sender: NSButton) {
@@ -934,7 +879,7 @@ extension ProviderSwitcherView {
 
     func _test_quotaIndicatorMouseEvent(buttonTag: Int, type: NSEvent.EventType) -> NSEvent? {
         guard let button = self.buttons.first(where: { $0.tag == buttonTag }),
-              let track = self.quotaIndicators[ObjectIdentifier(button)]?.track
+              let track = self.quotaIndicators[ObjectIdentifier(button)]?.first?.track
         else {
             return nil
         }
@@ -1016,9 +961,10 @@ extension ProviderSwitcherView {
         self.buttons.map(Self.maxToggleWidth(for:))
     }
 
-    func _test_buttonContentFrames() -> [NSRect?] {
+    func _test_buttonContentFrames(inSwitcherCoordinates: Bool = false) -> [NSRect?] {
         self.buttons.map { button in
-            button.subviews.first(where: { $0 is NSStackView })?.frame
+            guard let stack = button.subviews.first(where: { $0 is NSStackView }) else { return nil }
+            return inSwitcherCoordinates ? self.convert(stack.bounds, from: stack) : stack.frame
         }
     }
 
@@ -1035,97 +981,294 @@ extension ProviderSwitcherView {
         self.updateButtonStyles()
     }
 
+    func _test_quotaIndicatorCounts() -> [Int] {
+        self.buttons.map { self.quotaIndicators[ObjectIdentifier($0)]?.count ?? 0 }
+    }
+
+    func _test_quotaAccountIDs() -> [[String]] {
+        self.buttons.map { (self.quotaIndicators[ObjectIdentifier($0)] ?? []).map(\.accountID) }
+    }
+
     func _test_quotaIndicatorFillRatios() -> [CGFloat] {
-        self.buttons.compactMap { button in
-            self.quotaIndicators[ObjectIdentifier(button)]?.fillRatio
+        self.buttons.flatMap { button in
+            (self.quotaIndicators[ObjectIdentifier(button)] ?? []).map(\.fillRatio)
         }
     }
 
     func _test_quotaIndicatorVisibility() -> [(trackHidden: Bool, fillHidden: Bool)] {
-        self.buttons.compactMap { button in
-            self.quotaIndicators[ObjectIdentifier(button)].map { indicator in
+        self.buttons.flatMap { button in
+            (self.quotaIndicators[ObjectIdentifier(button)] ?? []).map { indicator in
                 (indicator.track.isHidden, indicator.fill.isHidden)
             }
         }
     }
 
     func _test_quotaIndicatorFillFrames() -> [NSRect] {
-        self.buttons.compactMap { button in
-            self.quotaIndicators[ObjectIdentifier(button)]?.fill.frame
+        self.buttons.flatMap { button in
+            (self.quotaIndicators[ObjectIdentifier(button)] ?? []).map(\.fill.frame)
         }
     }
 
     func _test_quotaIndicatorTrackFrames() -> [NSRect] {
-        self.buttons.compactMap { button in
-            guard let track = self.quotaIndicators[ObjectIdentifier(button)]?.track else { return nil }
-            return self.convert(track.bounds, from: track)
+        self.buttons.flatMap { button in
+            (self.quotaIndicators[ObjectIdentifier(button)] ?? []).map {
+                self.convert($0.track.bounds, from: $0.track)
+            }
         }
     }
 
     func _test_quotaIndicatorConstraintIdentifiers() -> [ObjectIdentifier] {
-        self.buttons.compactMap { button in
-            self.quotaIndicators[ObjectIdentifier(button)].map { ObjectIdentifier($0.fillWidthConstraint) }
+        self.buttons.flatMap { button in
+            (self.quotaIndicators[ObjectIdentifier(button)] ?? []).map { ObjectIdentifier($0.fillWidthConstraint) }
         }
     }
 }
 #endif
 
 extension ProviderSwitcherView {
-    private func addQuotaIndicator(to view: NSView, selection: ProviderSwitcherSelection, remainingPercent: Double?) {
-        guard let remainingPercent else { return }
+    private func makeButton(
+        index: Int, segment: Segment, selected: ProviderSwitcherSelection?) -> NSButton
+    {
+        let button: NSButton
+        if self.stackedIcons {
+            let stacked = StackedToggleButton(
+                title: segment.title,
+                image: segment.image,
+                target: self,
+                action: #selector(self.handleSelection(_:)))
+            if self.rowCount >= 4 {
+                stacked.setTitleFontSize(NSFont.smallSystemFontSize - 3)
+            }
+            button = stacked
+        } else if self.showsIcons {
+            let inline = InlineIconToggleButton(
+                title: segment.title,
+                image: segment.image,
+                target: self,
+                action: #selector(self.handleSelection(_:)))
+            button = inline
+        } else if self.reservedQuotaCount > 1 {
+            let textOnly = InlineIconToggleButton(
+                title: segment.title,
+                image: NSImage(),
+                target: self,
+                action: #selector(self.handleSelection(_:)))
+            textOnly.useTextOnlyLayout()
+            button = textOnly
+        } else {
+            button = PaddedToggleButton(
+                title: segment.title,
+                target: self,
+                action: #selector(self.handleSelection(_:)))
+        }
+        button.tag = index
+        if self.showsIcons {
+            if self.stackedIcons {
+                // StackedToggleButton manages its own image view.
+            } else {
+                // InlineIconToggleButton manages its own image view.
+            }
+        } else {
+            button.image = nil
+            button.imagePosition = .noImage
+        }
 
-        let track = NSView()
-        track.wantsLayer = true
-        track.layer?.backgroundColor = NSColor.tertiaryLabelColor.withAlphaComponent(0.22).cgColor
-        track.layer?.cornerRadius = Self.quotaIndicatorHeight / 2
-        track.layer?.masksToBounds = true
-        track.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(track)
+        button.bezelStyle = .regularSquare
+        button.isBordered = false
+        button.controlSize = .small
+        button.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        button.setButtonType(.toggle)
+        button.contentTintColor = self.unselectedTextColor
+        button.alignment = .center
+        button.wantsLayer = true
+        button.layer?.cornerRadius = 6
+        button.state = (selected == segment.selection) ? .on : .off
+        button.toolTip = nil
+        button.translatesAutoresizingMaskIntoConstraints = false
+        let heightConstraint = button.heightAnchor.constraint(equalToConstant: self.rowHeight)
+        heightConstraint.isActive = true
+        self.buttonHeightConstraints.append(heightConstraint)
+        self.applyQuotaContentPadding(to: button)
+        self.buttons.append(button)
+        return button
+    }
 
-        let fill = NSView()
-        fill.wantsLayer = true
-        fill.layer?.backgroundColor = Self.quotaIndicatorColor(
-            for: selection,
-            remainingPercent: remainingPercent).cgColor
-        fill.layer?.cornerRadius = Self.quotaIndicatorHeight / 2
-        fill.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
-        fill.translatesAutoresizingMaskIntoConstraints = false
-        track.addSubview(fill)
+    func updateQuotaIndicators() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        let quotas = self.segments.map { self.quotas(for: $0.selection) }
+        self.updateQuotaHeight(count: max(1, quotas.map(\.count).max() ?? 0))
+        for (index, button) in self.buttons.enumerated() {
+            guard self.segments.indices.contains(index) else { continue }
+            let values = quotas[index]
+            let key = ObjectIdentifier(button)
+            if self.quotaIndicators[key]?.map(\.accountID) != values.map(\.id) {
+                self.quotaIndicators.removeValue(forKey: key)?.forEach { $0.track.removeFromSuperview() }
+                self.addQuotaIndicators(to: button, selection: self.segments[index].selection, quotas: values)
+            } else if var indicators = self.quotaIndicators[key] {
+                for row in values.indices {
+                    let remaining = values[row].percent.flatMap { $0.isFinite ? $0 : nil }
+                    let ratio = Self.quotaIndicatorRatio(remainingPercent: remaining ?? 0)
+                    if indicators[row].fillRatio != ratio {
+                        Self.updateQuotaIndicatorFill(
+                            indicator: &indicators[row],
+                            remainingPercent: remaining ?? 0,
+                            selection: self.segments[index].selection)
+                    }
+                    indicators[row].fill.layer?.backgroundColor = Self.quotaIndicatorColor(
+                        for: self.segments[index].selection,
+                        remainingPercent: remaining ?? 0).cgColor
+                    indicators[row].bottomConstraint.constant = -self.quotaBottomInset(index: row)
+                    self.styleQuotaIndicator(indicators[row], quota: values[row], index: row)
+                }
+                self.quotaIndicators[key] = indicators
+            }
+            self.updateQuotaIndicatorVisibility(for: button)
+        }
+    }
 
-        let ratio = Self.quotaIndicatorRatio(remainingPercent: remainingPercent)
-        let fillWidthConstraint = Self.quotaIndicatorFillWidthConstraint(fill: fill, track: track, ratio: ratio)
+    private func quotas(for selection: ProviderSwitcherSelection) -> [ProviderSwitcherAccountQuota] {
+        Self.quotas(for: selection, weekly: self.weeklyRemainingProvider, accounts: self.accountQuotaProvider)
+    }
 
-        NSLayoutConstraint.activate([
-            track.leadingAnchor.constraint(
-                equalTo: view.leadingAnchor,
-                constant: Self.quotaIndicatorHorizontalInset),
-            track.trailingAnchor.constraint(
-                equalTo: view.trailingAnchor,
-                constant: -Self.quotaIndicatorHorizontalInset),
-            track.bottomAnchor.constraint(
-                equalTo: view.bottomAnchor,
-                constant: -Self.quotaIndicatorBottomInset),
-            track.heightAnchor.constraint(equalToConstant: Self.quotaIndicatorHeight),
-            fill.leadingAnchor.constraint(equalTo: track.leadingAnchor),
-            fill.topAnchor.constraint(equalTo: track.topAnchor),
-            fill.bottomAnchor.constraint(equalTo: track.bottomAnchor),
-            fillWidthConstraint,
-        ])
+    private static func quotas(
+        for selection: ProviderSwitcherSelection,
+        weekly: (ProviderInstanceID) -> Double?,
+        accounts: ((ProviderInstanceID) -> [ProviderSwitcherAccountQuota])?) -> [ProviderSwitcherAccountQuota]
+    {
+        guard case let .provider(provider) = selection else { return [] }
+        if let values = accounts?(provider), !values.isEmpty {
+            return values.map { value in
+                ProviderSwitcherAccountQuota(
+                    id: value.id,
+                    percent: value.percent.flatMap { $0.isFinite ? $0 : nil },
+                    isActive: value.isActive)
+            }
+        }
+        guard let percent = weekly(provider), percent.isFinite else { return [] }
+        return [.init(id: provider.rawValue, percent: percent, isActive: true)]
+    }
 
-        self.quotaIndicators[ObjectIdentifier(view)] = QuotaIndicator(
-            track: track,
-            fill: fill,
-            fillWidthConstraint: fillWidthConstraint,
-            fillRatio: ratio)
+    private static func extraQuotaHeight(count: Int) -> CGFloat {
+        count > 1 ? 4 + CGFloat(count - 1) * 4 : 0
+    }
+
+    private func applyQuotaContentPadding(to button: NSButton) {
+        let extra = Self.extraQuotaHeight(count: self.reservedQuotaCount)
+        if let button = button as? StackedToggleButton {
+            button.contentPadding.bottom = 2 + extra
+        } else if let button = button as? InlineIconToggleButton {
+            button.contentPadding.bottom = 4 + extra
+        } else if let button = button as? PaddedToggleButton {
+            button.contentPadding.bottom = 4 + extra
+        }
+        // NSButton uses flipped coordinates. Keep icon/label content above the reserved meter rows.
+        for constraint in button.constraints
+            where constraint.firstAttribute == .centerY && constraint.firstItem is NSStackView
+        {
+            constraint.constant = -extra / 2
+        }
+    }
+
+    private func updateQuotaHeight(count: Int) {
+        guard self.reservedQuotaCount != count else { return }
+        self.reservedQuotaCount = count
+        self.requiresMenuRowReplacement = true
+        self.rowHeight = Self.switcherButtonHeight(stackedIcons: self.stackedIcons, rowCount: self.rowCount)
+            + Self.extraQuotaHeight(count: count)
+        for constraint in self.buttonHeightConstraints + self.rowHeightConstraints {
+            constraint.constant = self.rowHeight
+        }
+        for button in self.buttons {
+            self.applyQuotaContentPadding(to: button)
+        }
+        self.setFrameSize(NSSize(
+            width: self.frame.width,
+            height: self.rowHeight * CGFloat(self.rowCount) + self.rowSpacing * CGFloat(max(0, self.rowCount - 1))))
+        self.invalidateIntrinsicContentSize()
+        self.superview?.needsLayout = true
+    }
+
+    private func quotaBottomInset(index: Int) -> CGFloat {
+        Self.quotaIndicatorBottomInset + CGFloat(max(0, self.reservedQuotaCount - index - 1)) * 4
+    }
+
+    private func addQuotaIndicators(
+        to view: NSView,
+        selection: ProviderSwitcherSelection,
+        quotas: [ProviderSwitcherAccountQuota])
+    {
+        var indicators: [QuotaIndicator] = []
+        for (index, quota) in quotas.enumerated() {
+            let track = NSView()
+            track.wantsLayer = true
+            track.layer?.backgroundColor = NSColor.tertiaryLabelColor.withAlphaComponent(0.22).cgColor
+            track.layer?.cornerRadius = Self.quotaIndicatorHeight / 2
+            track.layer?.masksToBounds = true
+            track.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(track)
+            let fill = NSView()
+            fill.wantsLayer = true
+            fill.layer?.backgroundColor = Self.quotaIndicatorColor(
+                for: selection, remainingPercent: quota.percent ?? 0).cgColor
+            fill.layer?.cornerRadius = Self.quotaIndicatorHeight / 2
+            fill.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+            fill.translatesAutoresizingMaskIntoConstraints = false
+            track.addSubview(fill)
+            let ratio = Self.quotaIndicatorRatio(remainingPercent: quota.percent ?? 0)
+            let fillWidth = Self.quotaIndicatorFillWidthConstraint(fill: fill, track: track, ratio: ratio)
+            let bottom = track.bottomAnchor.constraint(
+                equalTo: view.bottomAnchor, constant: -self.quotaBottomInset(index: index))
+            NSLayoutConstraint.activate([
+                track.leadingAnchor.constraint(
+                    equalTo: view.leadingAnchor,
+                    constant: Self.quotaIndicatorHorizontalInset),
+                track.trailingAnchor.constraint(
+                    equalTo: view.trailingAnchor,
+                    constant: -Self.quotaIndicatorHorizontalInset),
+                bottom,
+                track.heightAnchor.constraint(equalToConstant: Self.quotaIndicatorHeight),
+                fill.leadingAnchor.constraint(equalTo: track.leadingAnchor),
+                fill.topAnchor.constraint(equalTo: track.topAnchor),
+                fill.bottomAnchor.constraint(equalTo: track.bottomAnchor),
+                fillWidth,
+            ])
+            let indicator = QuotaIndicator(
+                accountID: quota.id,
+                track: track,
+                fill: fill,
+                fillWidthConstraint: fillWidth,
+                fillRatio: ratio,
+                bottomConstraint: bottom)
+            self.styleQuotaIndicator(indicator, quota: quota, index: index)
+            indicators.append(indicator)
+        }
+        self.quotaIndicators[ObjectIdentifier(view)] = indicators
         self.updateQuotaIndicatorVisibility(for: view)
     }
 
-    private func updateQuotaIndicatorVisibility(for view: NSView) {
-        guard let indicator = self.quotaIndicators[ObjectIdentifier(view)] else { return }
-        // Keep the provider's quota visible while its tab is selected as well. The
-        // indicator is the cross-provider status cue, not part of the selection chrome.
-        indicator.track.isHidden = false
+    private func styleQuotaIndicator(_ indicator: QuotaIndicator, quota: ProviderSwitcherAccountQuota, index: Int) {
+        let account = L("Account %@", String(index + 1))
+        let percent = quota.percent.flatMap { $0.isFinite ? $0 : nil }
+        let value = percent.map { codexBarLocalizedInteger(Int(min(100, max(0, $0)).rounded())) + "%" }
+            ?? L("Limits not available")
+        indicator.track.toolTip = [account, value, quota.isActive ? L("Active") : nil]
+            .compactMap(\.self).joined(separator: " · ")
+        indicator.track.setAccessibilityElement(true)
+        indicator.track.setAccessibilityRole(.progressIndicator)
+        indicator.track.setAccessibilityLabel(indicator.track.toolTip)
+        indicator.track.setAccessibilityValue(percent.map { NSNumber(value: $0) })
+        indicator.track.layer?.opacity = percent == nil ? 0.45 : 1
+        indicator.fill.alphaValue = quota.isActive ? 1 : 0.7
         indicator.fill.isHidden = indicator.fillRatio <= 0
+    }
+
+    private func updateQuotaIndicatorVisibility(for view: NSView) {
+        for indicator in self.quotaIndicators[ObjectIdentifier(view)] ?? [] {
+            indicator.track.isHidden = false
+            indicator.fill.isHidden = indicator.fillRatio <= 0
+        }
     }
 
     fileprivate static func updateQuotaIndicatorFill(

@@ -1,0 +1,40 @@
+name: CodexBar
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/codexbar/**', '.github/workflows/codexbar.yml', 'package.json', 'AGENTS.md']
+  pull_request:
+    paths: ['apps/codexbar/**', '.github/workflows/codexbar.yml', 'package.json', 'AGENTS.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codexbar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: xcode-27
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: apps/codexbar
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Select Xcode 27
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
+          echo "DEVELOPER_DIR=/Applications/Xcode_27.0.app/Contents/Developer" >> "$GITHUB_ENV"
+          xcodebuild -version
+          swift --version
+      - name: Check CodexBar
+        run: make check
+      - name: Test complete CodexBar inventory
+        timeout-minutes: 75
+        run: ./Scripts/test.sh --direct-workers 2
