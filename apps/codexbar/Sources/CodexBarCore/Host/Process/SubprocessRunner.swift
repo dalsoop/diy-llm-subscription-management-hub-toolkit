@@ -114,6 +114,8 @@ public enum SubprocessRunner {
         arguments: [String],
         environment: [String: String],
         currentDirectoryURL: URL? = nil,
+        maxOutputBytes: Int? = nil,
+        standardInput: Pipe? = nil,
         acceptsNonZeroExit: Bool = false,
         label: String) async throws -> SubprocessResult
     {
@@ -123,6 +125,8 @@ public enum SubprocessRunner {
                 arguments: arguments,
                 environment: environment,
                 timeout: .infinity,
+                maxOutputBytes: maxOutputBytes,
+                standardInput: standardInput,
                 currentDirectoryURL: currentDirectoryURL,
                 acceptsNonZeroExit: acceptsNonZeroExit,
                 label: label)

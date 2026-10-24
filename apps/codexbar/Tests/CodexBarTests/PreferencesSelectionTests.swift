@@ -15,6 +15,9 @@ struct PreferencesSelectionTests {
             .menuBar,
             .menu,
             .advanced,
+            .hooks,
+            .plugins,
+            .opencodex,
             .about,
             .debug,
             .provider(.claude),
@@ -24,6 +27,19 @@ struct PreferencesSelectionTests {
         }
         #expect(SettingsPane(persistenceToken: "provider:definitely-not-a-provider") == nil)
         #expect(SettingsPane(persistenceToken: "") == nil)
+    }
+
+    @Test
+    func `opencodex token restores independently of provider panes`() {
+        let defaults = InMemoryUserDefaults()
+        defaults.set("opencodex", forKey: PreferencesSelection.paneDefaultsKey)
+        let selection = PreferencesSelection(userDefaults: defaults)
+        #expect(selection.pane.persistenceToken == "opencodex")
+        selection.pane = .provider(.claude)
+        selection.goBack()
+        #expect(selection.pane.persistenceToken == "opencodex")
+        selection.goForward()
+        #expect(selection.pane == .provider(.claude))
     }
 
     @Test

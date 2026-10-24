@@ -64,6 +64,7 @@ extension UsageStore {
     @discardableResult
     func refreshOpenCodexHubCard(_ provider: UsageProvider, generation: UInt64?) async -> Bool {
         guard let hubProvider = OpenCodexHubProvider(usageProvider: provider) else { return false }
+        self.expireOpenCodexHubPendingSwitch(provider)
         let executablePath = self.settings.openCodexHubExecutablePath(for: provider)
         let snapshotPath = self.settings.openCodexHubSnapshotPath(for: provider)
         let result: Result<OpenCodexHubPool, Error>
@@ -105,6 +106,17 @@ extension UsageStore {
             }
             self.errors[provider.instanceID] = message
         }
+        return true
+    }
+
+    @discardableResult
+    func expireOpenCodexHubPendingSwitch(_ provider: UsageProvider, now: Date = Date()) -> Bool {
+        guard var state = self.openCodexHubCardStates[provider],
+              state.switchStatus.expirePendingIfNeeded(now: now)
+        else { return false }
+        self.openCodexHubCardStates[provider] = state
+        self.openCodexHubPollTasks[provider]?.cancel()
+        self.openCodexHubPollTasks[provider] = nil
         return true
     }
 
@@ -195,6 +207,7 @@ extension UsageStore {
                 guard !Task.isCancelled, let self,
                       self.openCodexHubCardState(for: provider)?.switchStatus.isPending == true
                 else { return }
+                if self.expireOpenCodexHubPendingSwitch(provider) { return }
                 await self.refreshProvider(provider)
             }
         }

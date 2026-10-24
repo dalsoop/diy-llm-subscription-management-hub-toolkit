@@ -1,5 +1,91 @@
 # Changelog
 
+## 0.80.0 — 2026-10-23
+
+### Highlights
+
+- New providers and CLI login: Soniox and Trae CN join the bundled providers (108 in total), and `codexbar config login --provider copilot` signs in to Copilot from the CLI through GitHub's device flow.
+- Pace and spend: monthly allowances show a daily target (what's left divided by the days until reset), Claude Cowork usage is no longer counted twice, Claude's priced subtotal survives unpriced days, and Mythos 5.1 / Mythos 5 are priced.
+- Menu bar and Settings: iCloud fleet usage appears in the menu bar for providers signed in only on another Mac, stacked meters share one column, user-plugin quotas draw both meters in the merged icon, cached titles render about 23% faster, and Settings adopts native Liquid Glass on macOS 26.
+- Reliability: Kiro no longer opens sign-in tabs on every background refresh while offline, the Linux musl CLI no longer crashes in Codex cost scans, `codexbar serve` stops returning stale dashboards after a mode switch, and Grok, Kimi, Cursor, Tavily, OpenCode Go and Antigravity each get targeted fixes.
+
+### Added
+
+- Pace: show how much of a monthly allowance can be used per day until reset, using the remaining allowance and local calendar days. (#4677) Thanks @anthonybvila!
+- iCloud Sync: show last-known fleet usage in the menu bar for enabled providers without local usage, while keeping open menus stable and local accounts and derived costs separate. (#4582) Thanks @seasonhuang!
+- CLI: add `codexbar config login --provider copilot` with device-code sign-in, token-free JSON events, and safe reuse of existing GitHub accounts (#4706). Thanks @DreamyTalesPAN!
+- Soniox: show prepaid balance and monthly spend using an organization API key, with an optional monthly budget meter. (#4678) Thanks @JiehoonKwak!
+- Trae CN: show account credit usage from your signed-in dashboard (#4682). Thanks @liuyuplus!
+- Kimi: show promotional gift balances and expiry dates even when the monthly subscription allowance is exhausted (#4691). Thanks @codertesla!
+- Claude cost history: price Mythos 5.1 and Mythos 5 from published Anthropic rates and refresh cached estimates without rereading unchanged transcripts (#4578). Thanks @urda!
+- Codex accounts: record bounded, identity-free registry mutation diagnostics in the existing debug log to help investigate saved-account loss (#4699, #4499). Thanks @LeoLin990405!
+- Integrations: link ccx, a macOS companion that reads CodexBar usage to offer Claude Code/Codex task handoff near quota limits (#4685). Thanks @AaronWong1999!
+- Linux: link the community CodexBar GTK front-end using the shared CLI (#4697). Thanks @SaahiilM!
+
+### Changed
+
+- Settings: use the native sidebar, search, toolbar, and Liquid Glass on macOS 26 and later, retaining the existing layout on older macOS versions (#4708). Thanks @elijahfriedman!
+- Settings: explain that Highest usage compares quotas only and recommend Current selection for providers without quotas (#4666). Thanks @oryband!
+
+### Fixed
+
+- Claude cost history: count Cowork audit and embedded transcript copies once and rebuild previously inflated cached reports (#4712).
+- Kiro: skip background CLI probes when the usage service is unreachable, preventing repeated offline sign-in tabs while retaining last-good usage (#4589). Thanks @dnicolson!
+- Linux CLI: prevent static musl builds from crashing when scanning non-empty Codex session files, with a regression check for musl and glibc builds (#4672, #4673). Thanks @harjothkhara and @psl75011!
+- Grok: restore the weekly Credits window on zero-usage weeks when ACP omits the percentage, while preserving prepaid balances and leaving unvalidated usage unknown (#4674, #4679). Thanks @LeoLin990405 and @psl75011!
+- Spend: keep Claude’s priced subtotal as a lower bound when some requests use models without known prices (#4579, #4588). Thanks @harjothkhara and @DevilVed!
+- HTTP dashboard: rebuild expired snapshots before responding, including when switching between used and remaining percentages (#4707).
+- Cursor: show the X Subscription weekly pool as the main meter while preserving legacy plans and separate on-demand spend (#4545, #4695). Thanks @Abelo9996 and @ViDtje!
+- Menu cost charts: preserve zero-usage calendar days for every provider, including Claude and Pi, while keeping incomplete and unpriced history unknown (#4664).
+- Menu bar: show both primary and secondary user-plugin quotas in the merged meter icon, using the same thick and thin lanes as built-in providers (#4709). Thanks @soimy!
+- Menu bar: avoid formatting reset styles absent from the layout and keep absolute-only titles cached as countdowns advance (#4720).
+- Menu bar: align leading window labels so stacked meters and percentages share a column, including stacked provider rows. (#4581) Thanks @happut!
+- Widgets: explain when the configured provider is unavailable instead of promising refreshed usage data (#4669, #4671). Thanks @vincent-peng!
+- Menu Bar settings: explain that the Layout editor requires the “Icon & percent” style instead of showing drag instructions for a disabled editor (#4665, #4680). Thanks @LeoLin990405!
+- Settings: include Acknowledgements in shared Back and Forward history, keeping About navigation and the window title consistent. (#4590) Thanks @elijahfriedman!
+- Claude: show limits unavailable after a successful response with no quota windows, while preserving spend-only views (#4537, #4687). Thanks @LeoLin990405!
+- Tavily: keep plan, key, and pay-as-you-go usage when a free account reports a null pay-as-you-go limit instead of failing refresh (#4710, #4711). Thanks @harjothkhara and @Driedsandwich!
+- Kimi: keep membership usage visible when a lapsed Code subscription no longer returns Code quota pools (#4700). Thanks @codertesla!
+- OpenCode Go: read v2-only local history, include attributed compaction costs, and retain valid v2 usage when a legacy copy has invalid costs (#4587). Thanks @sreejithraman!
+- Codex: keep local spend scans moving after Codex closes a WAL trace database without sidecars, using a read-only immutable fallback (#4577). Thanks @urda!
+- Antigravity: preserve separate versioned Gemini quota names, including Gemini 4 Argon, instead of repeating the generic Gemini label (#4585). Thanks @jangisaac-dev!
+- Localization: correct Ukrainian quota labels, keep countdowns in the selected language, and fix Japanese and Korean countdown units and composed time labels. (#4676) Thanks @toxakara!
+- Claude: explain how to recover a temporarily unavailable macOS Keychain cache, with translated guidance (#4576). Thanks @mpses!
+- Plugins: release each user-plugin network session when its request completes, avoiding retained clients after plugins reload (#4584). Thanks @SebTardif!
+- Pi: use the official blue accent and coral/blue/yellow confetti palette, and open the current Pi repository from the dashboard link. (#4668) Thanks @oryband!
+- Linux desktop: show a readable provider initial when a bundled logo is unavailable (#4693). Thanks @SaahiilM!
+- Linux: preserve autostart preferences on reinstall when desktop entries contain whitespace, comments, or other groups. (#4662) Thanks @Lucenx9!
+- Linux: run the portable checks for `make check` and `make lint`, avoiding the macOS-only installer test (#4688). Thanks @Lucenx9!
+
+## 0.79.0 — 2026-10-20
+
+### Highlights
+
+- Linux: the CLI starts again on Ubuntu 26.04 and other systems without libxml2, and CI plus the release builds now check the binary's linked libraries so it can't regress silently; the installer uses standard directories when XDG paths are empty or relative, TypeSafe works on Linux, and the community DankMaterialShell widget is linked.
+- Widgets: after an update, CodexBar replaces a widget extension that is still running the previous version, so widgets resume updating without the manual `killall` workaround.
+- Memory and CPU: Devin no longer loads a browser's entire Local Storage (about 263 MiB down to 2.5 MiB extra on a large store), hidden OpenAI dashboard pages stop at the refresh deadline instead of spinning a CPU core, and incremental Claude cost refreshes are back to pre-0.78 peak memory.
+- Providers and settings: Vercel personal budgets are recognized, Cursor unified accounts show monthly additional spend, Antigravity represents Gemini by its ordinary quota and scans larger histories, the Israeli shekel is a preferred currency, and `--provider` accepts catalog IDs.
+
+### Added
+
+- Cursor: show current monthly additional spend for unified personal accounts while retaining summary spend and caps when billing is unavailable (#4593). Thanks @yazcaleb!
+- Settings: add Israeli new shekel (`ILS`, `₪`) to Preferred Currency with daily exchange rates and offline conversion (#4646). Thanks @elijahfriedman!
+- Linux: link the community codexbar-dms widget for DankMaterialShell, sharing the Linux desktop backend (#4658). Thanks @quantmind-br!
+
+### Fixed
+
+- Linux CLI: keep FoundationXML (`libxml2.so.2`) out of the glibc CLI again by validating plugin SVG icons only on macOS, so the CLI starts on Ubuntu 26.04 and a CI check now fails any build that links libxml2 (#4652, #4653). Thanks @simonsteiner and @harjothkhara!
+- Widgets: replace verified stale widget extension processes once after an app update, then request fresh timelines (#2838, #3339).
+- Devin: stream origin-filtered browser Local Storage with SweetCookieKit 0.5.9, avoiding large memory spikes and retained data from unrelated sites (#4649). Thanks @drewbitt!
+- Codex: stop hidden OpenAI dashboard pages at the refresh deadline, including stalled page preparation and JavaScript, while retaining verified API usage (#4641, #4642, #4645). Thanks @mchami02 and @enzonaute!
+- Claude cost history: lower peak memory during incremental cache refreshes back to pre-0.78 levels (#4598).
+- Vercel: recognize personal budgets with native or prefixed user IDs and label monetary usage as spend (#4650, #4623). Thanks @sf-jin-ku!
+- Antigravity: prefer measured ordinary Gemini quotas for the Gemini representative and keep Linux quota rows and alerts matched to their buckets, while preserving model-specific allowances and cadence/icon selection (#4659). Thanks @SilentKnight87!
+- Antigravity: scan larger local histories without dropping complete cost reports while retaining bounded work and cancellation (#4639). Thanks @arhmnsh!
+- TypeSafe: send a browser User-Agent so Cloudflare no longer blocks Linux requests (the default user agent contains `curl/`), which made valid sessions look expired (#4648). Thanks @johan456789!
+- CLI: accept catalog provider IDs in `--provider`, and keep Linux custom-provider results matched to the requested provider (#4643). Thanks @quantmind-br!
+- Linux desktop: use standard home directories when XDG config or data paths are empty or relative, preserving preferences and disabled autostart during reinstallation (#4661). Thanks @Lucenx9!
+
 ## 0.78.0 — 2026-10-19
 
 ### Highlights

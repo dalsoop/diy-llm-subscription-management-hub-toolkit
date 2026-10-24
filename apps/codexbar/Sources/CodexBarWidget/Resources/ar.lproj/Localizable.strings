@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "تقديرات %@ API · لم يتم إصدار فاتورة بها";
 "%@ cost" = "تكلفة %@";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ غير متاح. حرِّر الأداة لاختيار مزوِّد.";
 "%@ left" = "%@ متبقٍ";
 "%@ tokens" = "رموز %@";
 "%@ used" = "%@ مستخدم";
 "%@, selected" = "%@، محدد";
 "%@-day limit" = "%@ الحد الأقصى لليوم";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "الحد الأقصى للساعة %@";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "حد %@ للدقائق";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@ي";
 "%@H" = "%@س";
@@ -75,6 +79,7 @@
 "Daily usage" = "الاستخدام اليومي";
 "Deployment" = "النشر";
 "Edit predictions" = "تحرير التوقعات";
+"Enable a provider in CodexBar → Settings → Providers." = "فعِّل مزوِّدًا في CodexBar → الإعدادات → المزوِّدين.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "قم بتمكين أدوات الحساب في CodexBar → الإعدادات → القائمة → الأدوات. ثم قم بتحرير هذه القطعة لاختيار حساب.";
 "Extra usage" = "الاستخدام الإضافي";
 "Extra usage balance" = "رصيد استخدام إضافي";
@@ -97,6 +102,7 @@
 "Monthly budget" = "الميزانية الشهرية";
 "Monthly credits" = "الاعتمادات الشهرية";
 "Monthly quota" = "الحصة الشهرية";
+"Monthly usage" = "Monthly usage";
 "No data" = "لا توجد بيانات";
 "Not reported by %@" = "لم يتم الإبلاغ عنها بواسطة %@";
 "On-demand" = "الاستخدام حسب الطلب";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "مخططان محترقان الحصة في لوحة واحدة.";
 "Unavailable account" = "الحساب: غير متوفر";
 "Usage" = "الاستخدام";
-"Usage data appears after a refresh." = "تظهر بيانات الاستخدام بعد التحديث.";
-"Usage data will appear once the app refreshes." = "ستظهر بيانات الاستخدام بمجرد تحديث التطبيق.";
 "Usage history chart with recent totals." = "مخطط تاريخ الاستخدام مع الإجماليات الأخيرة.";
-"Usage history will appear after a refresh." = "سيظهر سجل الاستخدام بعد التحديث.";
 "Usage limit" = "حد الاستخدام";
 "Usage limits and reset countdowns for one saved account." = "حدود الاستخدام وإعادة ضبط العد التنازلي لحساب محفوظ واحد.";
 "Usage widget with a provider switcher." = "أداة لعرض الاستخدام مع مبدّل لموفري الخدمة.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "النافذة الأسبوعية";
 "Weekly quota" = "أسبوعي الحصة";
 "Weekly tokens" = "أسبوعي الرموز";
+"Weekly usage" = "الاستخدام الأسبوعي";
 "Window" = "نافذة الاستخدام";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "بعد إعادة التعيين";

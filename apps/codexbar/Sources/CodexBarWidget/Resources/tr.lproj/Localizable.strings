@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API tahmini · faturalandırılmadı";
 "%@ cost" = "%@ maliyeti";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ kullanılamıyor. Bir sağlayıcı seçmek için widget’ı düzenleyin.";
 "%@ left" = "%@ kaldı";
 "%@ tokens" = "%@ token";
 "%@ used" = "%@ kullanıldı";
 "%@, selected" = "%@, seçildi";
 "%@-day limit" = "%@ gün sınırı";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "%@ saat sınırı";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@ dakika sınırı";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@g";
 "%@H" = "%@sa";
@@ -75,6 +79,7 @@
 "Daily usage" = "Günlük kullanım";
 "Deployment" = "Dağıtım";
 "Edit predictions" = "Tahminleri düzenle";
+"Enable a provider in CodexBar → Settings → Providers." = "CodexBar → Ayarlar → Sağlayıcılar’da bir sağlayıcıyı etkinleştirin.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "CodexBar → Ayarlar → Menü → Widget'lar bölümünde hesap widget'larını etkinleştirin. Daha sonra bir hesap seçmek için bu widget'ı düzenleyin.";
 "Extra usage" = "Ek kullanım";
 "Extra usage balance" = "Ekstra kullanım bakiyesi";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Aylık bütçe";
 "Monthly credits" = "Aylık Krediler";
 "Monthly quota" = "Aylık Kota";
+"Monthly usage" = "Monthly usage";
 "No data" = "Veri yok";
 "Not reported by %@" = "%@ tarafından bildirilmedi";
 "On-demand" = "İsteğe bağlı kullanım";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Tek bir kutucukta iki Kota yanma grafiği.";
 "Unavailable account" = "Hesap: kullanılamıyor";
 "Usage" = "Kullanım";
-"Usage data appears after a refresh." = "Kullanım verileri yenileme sonrasında görünür.";
-"Usage data will appear once the app refreshes." = "Uygulama yenilendiğinde kullanım verileri görünecektir.";
 "Usage history chart with recent totals." = "Son toplamları içeren kullanım geçmişi grafiği.";
-"Usage history will appear after a refresh." = "Kullanım geçmişi yenileme sonrasında görünecektir.";
 "Usage limit" = "Kullanım sınırı";
 "Usage limits and reset countdowns for one saved account." = "Kayıtlı bir hesap için kullanım sınırları ve geri sayımları sıfırlama.";
 "Usage widget with a provider switcher." = "Sağlayıcı değiştiricili kullanım widget'ı.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Haftalık Pencere";
 "Weekly quota" = "Haftalık Kota";
 "Weekly tokens" = "Haftalık token";
+"Weekly usage" = "Haftalık kullanım";
 "Window" = "Kullanım penceresi";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "sıfırlamadan sonra";

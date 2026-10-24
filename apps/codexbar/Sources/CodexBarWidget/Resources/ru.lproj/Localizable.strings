@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API расчетный · счет не выставлен";
 "%@ cost" = "Стоимость за %@";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ недоступен. Отредактируйте виджет, чтобы выбрать провайдера.";
 "%@ left" = "%@ осталось";
 "%@ tokens" = "%@ токенов";
 "%@ used" = "%@ использовано";
 "%@, selected" = "%@, выбрано";
 "%@-day limit" = "%@ дней";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "%@-часовой лимит";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@ минутный лимит";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@дн";
 "%@H" = "%@ч";
@@ -75,6 +79,7 @@
 "Daily usage" = "Ежедневное использование";
 "Deployment" = "Развёртывание";
 "Edit predictions" = "Редактировать прогнозы";
+"Enable a provider in CodexBar → Settings → Providers." = "Включите провайдера в CodexBar → Настройки → Провайдеры.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Включите виджеты аккаунта в CodexBar → Настройки → Меню → Виджеты. Затем отредактируйте этот виджет, чтобы выбрать учетную запись.";
 "Extra usage" = "Дополнительное использование";
 "Extra usage balance" = "Дополнительный баланс использования";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Ежемесячный бюджет";
 "Monthly credits" = "Ежемесячно Кредиты";
 "Monthly quota" = "Ежемесячно Квота";
+"Monthly usage" = "Monthly usage";
 "No data" = "Нет данных";
 "Not reported by %@" = "Не сообщил %@";
 "On-demand" = "Использование по требованию";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Две диаграммы сгорания Квота в одной плитке.";
 "Unavailable account" = "Аккаунт: Недоступно";
 "Usage" = "Использование";
-"Usage data appears after a refresh." = "Данные об использовании появляются после обновления.";
-"Usage data will appear once the app refreshes." = "Данные об использовании появятся после обновления приложения.";
 "Usage history chart with recent totals." = "Диаграмма истории использования с последними итогами.";
-"Usage history will appear after a refresh." = "История использования появится после обновления.";
 "Usage limit" = "Лимит использования";
 "Usage limits and reset countdowns for one saved account." = "Ограничения использования и сброс обратного отсчета для одной сохраненной учетной записи.";
 "Usage widget with a provider switcher." = "Виджет использования с переключателем провайдера.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Еженедельное окно";
 "Weekly quota" = "Еженедельно Квота";
 "Weekly tokens" = "Еженедельно токены";
+"Weekly usage" = "Еженедельное использование";
 "Window" = "Окно использования";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "после сброса";

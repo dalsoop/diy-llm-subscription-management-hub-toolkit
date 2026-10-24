@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API est. · no facturat";
 "%@ cost" = "Cost %@";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ no està disponible. Editeu el giny per triar un proveïdor.";
 "%@ left" = "Queden %@";
 "%@ tokens" = "Fitxes %@";
 "%@ used" = "%@ utilitzat";
 "%@, selected" = "%@, seleccionat";
 "%@-day limit" = "%@ límit de dies";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "Límit d'hores %@";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@ límit de minuts";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@d";
 "%@H" = "%@h";
@@ -75,6 +79,7 @@
 "Daily usage" = "Ús diari";
 "Deployment" = "Desplegament";
 "Edit predictions" = "Edita les prediccions";
+"Enable a provider in CodexBar → Settings → Providers." = "Activeu un proveïdor a CodexBar → Configuració → Proveïdors.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Activa els ginys del compte a CodexBar → Configuració → Menú → Ginys. A continuació, editeu aquest widget per triar un compte.";
 "Extra usage" = "Ús addicional";
 "Extra usage balance" = "Saldo d'ús addicional";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Pressupost mensual";
 "Monthly credits" = "Crèdits mensual";
 "Monthly quota" = "Quota mensual";
+"Monthly usage" = "Monthly usage";
 "No data" = "Sense dades";
 "Not reported by %@" = "No informat per %@";
 "On-demand" = "Ús sota demanda";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Dos gràfics de desgast de quotes en una fitxa.";
 "Unavailable account" = "Compte: No disponible";
 "Usage" = "Ús";
-"Usage data appears after a refresh." = "Les dades d'ús apareixen després d'una actualització.";
-"Usage data will appear once the app refreshes." = "Les dades d'ús apareixeran un cop s'actualitzi l'aplicació.";
 "Usage history chart with recent totals." = "Gràfic d'historial d'ús amb totals recents.";
-"Usage history will appear after a refresh." = "L'historial d'ús apareixerà després d'una actualització.";
 "Usage limit" = "Límit d'ús";
 "Usage limits and reset countdowns for one saved account." = "Límits d'ús i restabliment del compte enrere per a un compte desat.";
 "Usage widget with a provider switcher." = "Giny d'ús amb un commutador de proveïdors.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Finestra setmanal";
 "Weekly quota" = "Quota setmanal";
 "Weekly tokens" = "tokens setmanal";
+"Weekly usage" = "Ús setmanal";
 "Window" = "Finestra d'ús";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "després del reinici";

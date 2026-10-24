@@ -38,7 +38,7 @@ struct BurnDownEmptyState: View {
             Text(W("Open CodexBar"))
                 .font(.body)
                 .fontWeight(.semibold)
-            Text(W("Usage data will appear once the app refreshes."))
+            Text(W("No data"))
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .opacity(0.55)
@@ -123,7 +123,7 @@ private struct BurnDownLayout: View {
                             .foregroundStyle(theme.text)
                             .lineLimit(1)
                     }
-                    Text("\(self.title) · \(burnWindowLabel(self.window.windowMinutes))")
+                    Text(burnWindowUsageLabel(title: self.title, windowMinutes: self.window.windowMinutes))
                         .font(.system(size: 11))
                         .foregroundStyle(theme.sub)
                         .kerning(0.2)
@@ -691,12 +691,27 @@ struct BurnGeom {
 
 func burnWindowLabel(_ windowMinutes: Int?) -> String {
     guard let mins = windowMinutes else { return W("Usage limit") }
+    // These durations also encode nominal weekly/monthly lanes; do not present them as a lockout.
+    if mins == 30 * 24 * 60 { return W("Monthly usage") }
+    if mins == 7 * 24 * 60 { return W("Weekly usage") }
     if mins < 60 {
-        return W("%@-minute limit", String(describing: mins))
+        return W("%@-minute usage", String(describing: mins))
     }
-    if mins % 1440 == 0 { return W("%@-day limit", String(describing: mins / 1440)) }
-    if mins % 60 == 0 { return W("%@-hour limit", String(describing: mins / 60)) }
-    return W("%@-minute limit", String(describing: mins))
+    if mins % 1440 == 0 { return W("%@-day usage", String(describing: mins / 1440)) }
+    if mins % 60 == 0 { return W("%@-hour usage", String(describing: mins / 60)) }
+    return W("%@-minute usage", String(describing: mins))
+}
+
+func burnWindowTag(title: String, windowMinutes: Int?) -> String {
+    let period = burnCompactWindowLabel(windowMinutes, fallback: "")
+    return period.isEmpty || title == period ? title : "\(title) · \(period)"
+}
+
+func burnWindowUsageLabel(title: String, windowMinutes: Int?) -> String {
+    let period = burnWindowLabel(windowMinutes)
+    if windowMinutes == 43200, title == W("Monthly") { return period }
+    if windowMinutes == 10080, title == W("Weekly") { return period }
+    return "\(title) · \(period)"
 }
 
 func burnEffectiveResetDate(
@@ -722,6 +737,7 @@ func burnAxisDateRange(
 
 func burnCompactWindowLabel(_ windowMinutes: Int?, fallback: String) -> String {
     guard let minutes = windowMinutes else { return fallback }
+    if minutes == 30 * 24 * 60 { return W("Monthly") }
     if minutes > 1440, minutes % 1440 == 0 { return W("%@D", String(describing: minutes / 1440)) }
     if minutes % 60 == 0 { return W("%@H", String(describing: minutes / 60)) }
     return W("%@M", String(describing: minutes))

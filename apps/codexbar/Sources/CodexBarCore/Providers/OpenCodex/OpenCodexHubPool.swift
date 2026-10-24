@@ -29,6 +29,11 @@ public enum OpenCodexHubProvider: String, CaseIterable, Sendable, Codable {
     public var listArguments: [String] {
         ["account", "list", self.rawValue, "--quota", "--json"]
     }
+
+    /// Remote Link permits passive reads only; requesting quota refresh is refused on a client.
+    public var readOnlyListArguments: [String] {
+        ["account", "list", self.rawValue, "--json"]
+    }
 }
 
 public struct OpenCodexHubQuotaWindow: Equatable, Sendable {

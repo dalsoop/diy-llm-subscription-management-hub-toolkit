@@ -23,8 +23,14 @@ extension StatusItemController {
         self.settingsOpenHandler = handler
     }
 
+    /// Presentation eligibility is wider than local refresh availability when iCloud supplies usage.
+    /// Do not change `UsageStore.isEnabled`: credential-less providers must stay out of local fetch work.
     func isEnabled(_ provider: UsageProvider) -> Bool {
-        self.store.isEnabled(provider)
+        self.store.isEnabled(provider) || self.menuBarUsageSource(for: provider).isFleet
+    }
+
+    func menuBarEligibleProviders() -> [UsageProvider] {
+        self.store.enabledFirstPartyProvidersForDisplay().filter(self.isEnabled)
     }
 }
 
@@ -509,6 +515,12 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
     }
 
     @objc func addManagedCodexAccountFromMenu(_: NSMenuItem) {
+        // Provider-specific by design: Codex's Add Account action hands hub-owned sign-in to the browser manager.
+        // Native Codex accounts continue through the local authentication coordinator below.
+        if self.settings.openCodexHubEnabled(for: .codex) {
+            Task { @MainActor [weak self] in await self?.openOpenCodexHubManagement(.codex) }
+            return
+        }
         guard self.codexAccountPromotionCoordinator.isInteractionBlocked() == false else {
             self.loginLogger.info("Add Account tap ignored: Codex account change already in-flight")
             return
@@ -537,6 +549,8 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
     }
 
     @objc func requestCodexSystemPromotionFromMenu(_ sender: NSMenuItem) {
+        // Provider-specific by design: promoting a native Codex login cannot change a hub-owned account.
+        guard !self.settings.openCodexHubEnabled(for: .codex) else { return }
         guard let rawManagedAccountID = sender.representedObject as? String,
               let managedAccountID = UUID(uuidString: rawManagedAccountID)
         else {
@@ -705,6 +719,14 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
     }
 
     private func startLoginFlow(provider: UsageProvider) {
+        if self.settings.openCodexHubEnabled(for: provider) {
+            self.loginTask = Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer { self.loginTask = nil }
+                await self.openOpenCodexHubManagement(provider)
+            }
+            return
+        }
         self.loginTask = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {

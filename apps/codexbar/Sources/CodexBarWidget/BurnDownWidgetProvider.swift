@@ -63,6 +63,7 @@ enum BurnProviderChoice: String, AppEnum {
     case bifrost
     case aixy
     case deepgram
+    case soniox
     case poe
     case chutes
     case neuralwatt
@@ -111,6 +112,7 @@ enum BurnProviderChoice: String, AppEnum {
     case parallel
     case claudeplatform
     case munito
+    case traecn
 
     static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Provider")
 
@@ -175,6 +177,7 @@ enum BurnProviderChoice: String, AppEnum {
         .bifrost: DisplayRepresentation(title: "Bifrost"),
         .aixy: DisplayRepresentation(title: "Aixy"),
         .deepgram: DisplayRepresentation(title: "Deepgram"),
+        .soniox: DisplayRepresentation(title: "Soniox"),
         .poe: DisplayRepresentation(title: "Poe"),
         .chutes: DisplayRepresentation(title: "Chutes"),
         .neuralwatt: DisplayRepresentation(title: "Neuralwatt"),
@@ -196,8 +199,8 @@ enum BurnProviderChoice: String, AppEnum {
         .replicate: DisplayRepresentation(title: "Replicate"),
         .huggingface: DisplayRepresentation(title: "Hugging Face"),
         .raycast: DisplayRepresentation(title: "Raycast"),
-        .pi: DisplayRepresentation(title: "Pi"),
         // Provider-specific by design: AppIntents requires literal catalog titles; snapshot data gates eligibility.
+        .pi: DisplayRepresentation(title: "Pi"),
         .v0: DisplayRepresentation(title: "v0"),
         .typesafe: DisplayRepresentation(title: "TypeSafe"),
         .hyper: DisplayRepresentation(title: "Charm Hyper"),
@@ -224,6 +227,7 @@ enum BurnProviderChoice: String, AppEnum {
         .parallel: DisplayRepresentation(title: "Parallel"),
         .claudeplatform: DisplayRepresentation(title: "Claude Platform"),
         .munito: DisplayRepresentation(title: "Munito"),
+        .traecn: DisplayRepresentation(title: "Trae CN"),
     ]
 
     var provider: UsageProvider {
@@ -377,11 +381,19 @@ struct BurnDownState {
         case .weekly: return W("Weekly")
         case .primary, .secondary, .tertiary:
             let title = self.entry.usageRows?.first { $0.id == selection.rawValue }?.title
+                ?? self.semanticTitle(for: selection)
                 ?? (selection == .primary ? metadata?.sessionLabel
                     : selection == .secondary ? metadata?.weeklyLabel : metadata?.opusLabel)
                 ?? "Usage"
             return W(title)
         }
+    }
+
+    /// Codex publishes semantic row ids (session/weekly/monthly), while intents can address physical slots.
+    private func semanticTitle(for selection: BurnWindowChoice) -> String? {
+        guard let window = self.window(for: selection) else { return nil }
+        let matches = self.entry.usageRows?.filter { $0.window == window } ?? []
+        return matches.count == 1 ? matches[0].title : nil
     }
 
     var selectedTitle: String {

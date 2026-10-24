@@ -56,13 +56,14 @@ struct ProvidersPane: View {
         let unfilteredModel = UsageMenuCardView.Model.make(self.store.menuCardInput(
             for: self.provider, context: .settings))
         // Provider-specific by design: only Codex has managed OAuth account snapshots for this shared settings view.
-        let overview = self.provider == .codex ? self.store.codexAccountUsageOverview { accountIDs in
-            Task { @MainActor in
-                await ProviderSettingsRefreshInteraction.perform {
-                    await self.store.refreshCodexAccountsForSettings(accountIDs)
+        let overview = self.provider == .codex && !self.settings.openCodexHubEnabled(for: .codex)
+            ? self.store.codexAccountUsageOverview { accountIDs in
+                Task { @MainActor in
+                    await ProviderSettingsRefreshInteraction.perform {
+                        await self.store.refreshCodexAccountsForSettings(accountIDs)
+                    }
                 }
-            }
-        } : nil
+            } : nil
         let visibilityModel = UsageMenuCardView.Model.make(self.store.menuCardInput(
             for: self.provider, context: .settings, optionalUsageOverride: true))
         let usageItems = ((overview?.usageItems ?? []) + visibilityModel.usageItemDescriptors(
@@ -96,9 +97,15 @@ struct ProvidersPane: View {
             onRefresh: {
                 self.triggerRefresh(for: self.provider)
             },
-            showsSupplementarySettingsContent: self.codexAccountsSectionState(for: self.provider) != nil,
+            showsSupplementarySettingsContent: self.settings.openCodexHubEnabled(for: self.provider)
+                || self.codexAccountsSectionState(for: self.provider) != nil,
             supplementarySettingsContent: {
-                if let state = self.codexAccountsSectionState(for: self.provider) {
+                if self.settings.openCodexHubEnabled(for: self.provider) {
+                    OpenCodexHubAccountManagementView(
+                        provider: self.provider,
+                        store: self.store,
+                        openAccounts: { await self.runProviderLoginFlow(self.provider) })
+                } else if let state = self.codexAccountsSectionState(for: self.provider) {
                     CodexAccountsSectionView(
                         state: state,
                         setActiveVisibleAccount: { visibleAccountID in
@@ -204,20 +211,18 @@ struct ProvidersPane: View {
             })
     }
 
+    private func providerUsageText(_ provider: UsageProvider) -> String {
+        if self.store.isStale(provider: provider) { return L("last_fetch_failed") }
+        let snapshot = self.store.presentationSnapshot(for: provider)
+        // Successful refreshes clear remembered availability; resolve quota-less successes from the snapshot.
+        let availability = self.store.knownLimitsAvailability(for: provider)
+            ?? UsageLimitsAvailability.resolve(provider: provider, snapshot: snapshot)
+        if availability.isUnavailable { return L("Limits not available") }
+        return snapshot?.updatedAt.relativeDescription() ?? L("usage_not_fetched_yet")
+    }
+
     func providerSubtitle(_ provider: UsageProvider) -> String {
         let meta = self.store.metadata(for: provider)
-        let usageText: String
-        if self.store.isStale(provider: provider) {
-            usageText = L("last_fetch_failed")
-        } else if self.store.knownLimitsAvailability(for: provider)?.isUnavailable == true {
-            usageText = L("Limits not available")
-        } else if let snapshot = self.store.presentationSnapshot(for: provider) {
-            let relative = snapshot.updatedAt.relativeDescription()
-            usageText = relative
-        } else {
-            usageText = L("usage_not_fetched_yet")
-        }
-
         let presentationContext = ProviderPresentationContext(
             provider: provider,
             settings: self.settings,
@@ -228,21 +233,11 @@ struct ProvidersPane: View {
             ?? ProviderPresentation(detailLine: ProviderPresentation.standardDetailLine)
         let detailLine = presentation.detailLine(presentationContext)
 
-        return "\(detailLine)\n\(usageText)"
+        return "\(detailLine)\n\(self.providerUsageText(provider))"
     }
 
     func providerSidebarSubtitle(_ provider: UsageProvider) -> String {
         let meta = self.store.metadata(for: provider)
-        let usageText: String = if self.store.isStale(provider: provider) {
-            L("last_fetch_failed")
-        } else if self.store.knownLimitsAvailability(for: provider)?.isUnavailable == true {
-            L("Limits not available")
-        } else if let snapshot = self.store.presentationSnapshot(for: provider) {
-            snapshot.updatedAt.relativeDescription()
-        } else {
-            L("usage_not_fetched_yet")
-        }
-
         let detailLine: String = if let sourceLabel = self.store.lastSourceLabels[provider.instanceID],
                                     !sourceLabel.isEmpty
         {
@@ -253,13 +248,13 @@ struct ProvidersPane: View {
             meta.cliName
         }
 
-        return "\(detailLine)\n\(usageText)"
+        return "\(detailLine)\n\(self.providerUsageText(provider))"
     }
 
     func codexAccountsSectionState(for provider: UsageProvider) -> CodexAccountsSectionState? {
         // Provider-specific by design: managed Codex profiles own app-only account promotion and reauthentication
         // state.
-        guard provider == .codex else { return nil }
+        guard provider == .codex, !self.settings.openCodexHubEnabled(for: provider) else { return nil }
         let projection = self.settings.codexVisibleAccountProjection
         let degradedNotice: CodexAccountsSectionNotice? = if projection.hasUnreadableAddedAccountStore {
             CodexAccountsSectionNotice(
@@ -283,12 +278,15 @@ struct ProvidersPane: View {
     }
 
     func selectCodexVisibleAccount(id: String) async {
+        // Provider-specific by design: native Codex selection and promotion cannot mutate hub-owned accounts.
+        guard !self.settings.openCodexHubEnabled(for: .codex) else { return }
         self.codexAccountsNotice = nil
         guard self.settings.selectCodexVisibleAccount(id: id) else { return }
         await self.refreshCodexProvider()
     }
 
     func requestCodexSystemVisibleAccount(id: String) async {
+        guard !self.settings.openCodexHubEnabled(for: .codex) else { return }
         self.codexAccountsNotice = nil
         guard let account = self.settings.codexVisibleAccountProjection.visibleAccounts.first(where: { $0.id == id }),
               let managedAccountID = account.storedAccountID
@@ -306,6 +304,10 @@ struct ProvidersPane: View {
     }
 
     func addManagedCodexAccount() async {
+        if self.settings.openCodexHubEnabled(for: .codex) {
+            await self.runProviderLoginFlow(.codex)
+            return
+        }
         self.codexAccountsNotice = nil
         guard let state = self.codexAccountsSectionState(for: .codex), state.canAddAccount else {
             return
@@ -321,6 +323,10 @@ struct ProvidersPane: View {
     }
 
     func reauthenticateCodexAccount(_ account: CodexVisibleAccount) async {
+        if self.settings.openCodexHubEnabled(for: .codex) {
+            await self.runProviderLoginFlow(.codex)
+            return
+        }
         self.codexAccountsNotice = nil
         self.settings.invalidateCodexAccountReconciliationSnapshotCache()
         guard let state = self.codexAccountsSectionState(for: .codex),
@@ -360,6 +366,8 @@ struct ProvidersPane: View {
     }
 
     func removeManagedCodexAccount(id: UUID) async {
+        // Provider-specific by design: removing a local Codex login must not mutate a hub-owned registration.
+        guard !self.settings.openCodexHubEnabled(for: .codex) else { return }
         self.codexAccountsNotice = nil
         do {
             try await self.managedCodexAccountCoordinator.removeManagedAccount(id: id)
@@ -426,6 +434,9 @@ struct ProvidersPane: View {
     }
 
     private func extraSettingsActions(for provider: UsageProvider) -> [ProviderSettingsActionsDescriptor] {
+        if self.settings.openCodexHubEnabled(for: provider) {
+            return []
+        }
         guard let impl = ProviderCatalog.implementation(for: provider) else { return [] }
         let context = self.makeSettingsContext(provider: provider)
         return impl.settingsActions(context: context)

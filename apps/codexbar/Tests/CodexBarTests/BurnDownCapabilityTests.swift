@@ -1,9 +1,27 @@
 import CodexBarCore
 import Foundation
 import Testing
+@testable import CodexBar
 @testable import CodexBarWidget
 
 struct BurnDownCapabilityTests {
+    @Test
+    func `a Codex monthly semantic row keeps its title in a physical widget slot`() throws {
+        let monthly = Self.window(minutes: 43200)
+        let title = CodexConsumerProjection.rateTitle(
+            lane: .monthly, windowMinutes: 43200, sessionLabel: "Session", weeklyLabel: "Weekly")
+        let rows: [WidgetSnapshot.WidgetUsageRowSnapshot] = [
+            .init(id: "monthly", title: title, percentLeft: monthly.remainingPercent, window: monthly),
+        ]
+        let state = try #require(BurnDownState(
+            snapshot: Self.snapshot(provider: .codex, primary: monthly, rows: rows),
+            provider: .codex,
+            selection: .primary))
+        #expect(state.selectedTitle == "Monthly")
+        #expect(state.selectedWindow == monthly)
+        #expect(burnWindowTag(title: state.selectedTitle, windowMinutes: 43200) == "Monthly")
+    }
+
     @Test
     func `every built in provider has a stable burn down intent case`() {
         #expect(Set(BurnProviderChoice.allCases.map(\.rawValue)) == Set(UsageProvider.allCases.map(\.rawValue)))
@@ -148,7 +166,7 @@ struct BurnDownCapabilityTests {
         #expect(state.window(for: .session) == nil)
         #expect(state.window(for: .weekly) == nil)
         #expect(!state.blankPrimaryChart)
-        #expect(burnWindowLabel(43200) == "30-day limit")
+        #expect(burnWindowLabel(43200) == "Monthly usage")
         let reset = try #require(total.resetsAt)
         let axis = burnAxisDateRange(effectiveResetAt: reset, windowMinutes: 43200, now: reset)
         #expect(axis.reset.timeIntervalSince(axis.start) == 43200 * 60)
@@ -254,9 +272,9 @@ struct BurnDownCapabilityTests {
 
     @Test
     func `unusual quota durations are never rounded down in labels`() {
-        #expect(burnWindowLabel(90) == "90-minute limit")
+        #expect(burnWindowLabel(90) == "90-minute usage")
         #expect(burnCompactWindowLabel(90, fallback: "") == "90M")
-        #expect(burnWindowLabel(1500) == "25-hour limit")
+        #expect(burnWindowLabel(1500) == "25-hour usage")
         #expect(burnCompactWindowLabel(1500, fallback: "") == "25H")
     }
 

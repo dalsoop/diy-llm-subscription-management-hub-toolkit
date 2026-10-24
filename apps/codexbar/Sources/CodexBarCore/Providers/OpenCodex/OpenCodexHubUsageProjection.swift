@@ -3,8 +3,9 @@ import Foundation
 /// Turns an opencodex hub account into the usage snapshot a provider card renders.
 ///
 /// Windows fill the primary, secondary and tertiary lanes in duration order (5-hour, weekly, monthly), each
-/// with its real duration so lane classifiers label them correctly; custom windows become named extra
-/// windows. The identity carries only the masked email opencodex lists.
+/// with nominal durations for lane classification; `monthly` does not report an exact duration and the
+/// 30-day value is a classifier sentinel, not an upstream measurement. Custom windows retain their labels.
+/// The identity carries only the masked email opencodex lists.
 public enum OpenCodexHubUsageProjection {
     public static let sourceLabel = "opencodex"
     static let fiveHourMinutes = 5 * 60

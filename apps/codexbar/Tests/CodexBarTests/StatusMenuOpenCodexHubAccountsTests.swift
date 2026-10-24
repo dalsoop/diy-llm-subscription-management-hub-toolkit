@@ -1,6 +1,7 @@
 import AppKit
 import CodexBarCore
 import Foundation
+import Observation
 import XCTest
 @testable import CodexBar
 
@@ -8,6 +9,28 @@ import XCTest
 /// every hub account's card at once, segmented shows account tabs above the active account's card.
 @MainActor
 final class StatusMenuOpenCodexHubAccountsTests: XCTestCase {
+    func test_pendingExpiryInvalidatesTheVisibleMenuWithoutAQuotaChange() throws {
+        let (controller, store) = self.makeController(provider: .grok, pool: Self.pool(.xai), layout: .stacked)
+        defer { controller.releaseStatusItemsForTesting() }
+        var state = try XCTUnwrap(store.openCodexHubCardStates[.grok])
+        state.switchStatus.begin(OpenCodexHubSwitchRequest(
+            provider: .xai,
+            targetIDSuffix: "in__",
+            targetEmail: "m***n@example.com",
+            requestedAt: Date().addingTimeInterval(-OpenCodexHubPendingSwitch.expiryInterval - 1)), label: "Account")
+        store.openCodexHubCardStates[.grok] = state
+        let before = controller.menuAdjunctReadinessSignature()
+        let observed = LockIsolated(false)
+        withObservationTracking {
+            _ = store.menuObservationToken
+        } onChange: {
+            observed.setValue(true)
+        }
+        XCTAssertTrue(store.expireOpenCodexHubPendingSwitch(.grok))
+        XCTAssertTrue(observed.value)
+        XCTAssertNotEqual(controller.menuAdjunctReadinessSignature(), before)
+    }
+
     private func makeController(
         provider: UsageProvider,
         pool: OpenCodexHubPool,

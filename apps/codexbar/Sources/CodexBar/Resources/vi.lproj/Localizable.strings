@@ -168,7 +168,7 @@
 "Local token history is unavailable or incomplete." = "Lịch sử token cục bộ không có hoặc chưa đầy đủ.";
 "Could not add Codex account" = "Không thể thêm tài khoản Codex";
 "Could not open Terminal for Gemini" = "Không thể mở Terminal cho Gemini";
-"Could not start claude /login" = "Không thể bắt đầu claude /đăng nhập";
+"Claude OAuth credentials read failed: CodexBar's Claude OAuth cache is temporarily unavailable in macOS Keychain. Check that the login keychain is unlocked in Keychain Access, then retry Refresh." = "Không thể đọc thông tin xác thực Claude OAuth: bộ nhớ đệm Claude OAuth của CodexBar tạm thời không khả dụng trong Chuỗi khóa macOS. Kiểm tra xem chuỗi khóa đăng nhập đã được mở khóa trong Truy cập chuỗi khóa chưa, rồi thử làm mới lại.";
 "Could not start codex login" = "Không thể bắt đầu đăng nhập codex";
 "Could not switch system account" = "Không thể không chuyển đổi tài khoản hệ thống";
 "Credits" = "Tín dụng";
@@ -617,7 +617,6 @@
 
 /* Display Pane */
 "menu_bar_style_title" = "Kiểu thanh menu";
-"menu_bar_style_subtitle" = "Cách hiển thị mục trên thanh menu.";
 "menu_bar_inactive_display_contrast_title" = "Cải thiện khả năng hiển thị trên màn hình không hoạt động";
 "menu_bar_inactive_display_contrast_subtitle" = "Sử dụng hiển thị tương phản cao để biểu tượng và chỉ số vẫn dễ đọc trên các màn hình khác.";
 "menu_bar_style_critters" = "Sinh vật";
@@ -1218,6 +1217,7 @@
 "Password" = "Mật khẩu";
 "%@ authentication is disabled." = "%@ xác thực bị tắt. Cookie";
 "%@ cookies are disabled." = "%@ bị tắt. Quyền truy cập";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ không khả dụng. Chỉnh sửa widget để chọn một nhà cung cấp.";
 "%@ web API access is disabled." = "%@ web API bị vô hiệu hóa.";
 "Disable %@ dashboard cookie usage." = "Tắt %@ cookie trang tổng quan Mức sử dụng . Quyền truy cập";
 "Keychain access is disabled in Advanced, so browser cookie import is unavailable." = "Keychain bị vô hiệu hóa trong Nâng cao, do đó, tính năng nhập cookie trình duyệt không khả dụng.";
@@ -1283,7 +1283,6 @@
 "Windsurf session JSON bundle" = "Phiên lướt ván buồm JSON gói";
 "Workspace ID" = "ID không gian làm việc";
 "Your StepFun platform password. Used to login and obtain a session token." = "Mật khẩu nền tảng StepFun của bạn. Được sử dụng để đăng nhập và nhận phiên token .";
-"claude /login exited with status %d." = "claude /đăng nhập đã thoát với trạng thái %d .";
 "codex login exited with status %d." = "đăng nhập codex đã thoát với trạng thái %d .";
 "Cookie: …\n\nor paste a cURL capture from the Abacus AI dashboard" = "Cookie: …\n\nhoặc dán bản chụp cURL từ bảng thông tin Abacus AI";
 "Cookie: …\n\nor paste the __Secure-next-auth.session-token value" = "Cookie: …\n\nhoặc dán giá trị __Secure-next-auth.session- token";
@@ -1411,6 +1410,7 @@
 /* Menu bar layout editor */
 "menu_bar_layout_title" = "Bố cục";
 "menu_bar_layout_footer" = "Kéo các thẻ để sắp xếp thanh menu. Bấm vào thẻ để thêm; chọn thẻ đã đặt rồi nhấn Delete để xóa.";
+"menu_bar_layout_footer_requires_icon_and_percent" = "Bố cục chỉ áp dụng cho kiểu thanh menu “%@”. Chọn kiểu đó ở trên để chỉnh sửa.";
 "menu_bar_layout_group_identity" = "Danh tính";
 "menu_bar_layout_group_usage" = "Mức sử dụng";
 "menu_bar_layout_group_time" = "Thời gian";
@@ -1801,6 +1801,7 @@
 "Details for %@" = "Thông tin chi tiết về %@";
 "EST. %@" = "Ước tính %@";
 "Enable Antigravity provider" = "Kích hoạt nhà cung cấp Antigravity";
+"Enable a provider in CodexBar → Settings → Providers." = "Bật một nhà cung cấp trong CodexBar → Cài đặt → Nhà cung cấp.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Kích hoạt tiện ích tài khoản trong CodexBar → Cài đặt → Menu → Tiện ích. Sau đó chỉnh sửa tiện ích này để chọn tài khoản.";
 "Error: %@" = "Lỗi: %@";
 "Examples: alt+cmd+2, shift+right. Refresh (cmd+r), Settings (cmd+,) and Quit (cmd+q) are reserved." = "Ví dụ: alt+cmd+2, shift+right. Làm mới (cmd+r), Cài đặt (cmd+,) và Thoát (cmd+q) được bảo lưu.";
@@ -2015,10 +2016,7 @@
 "Top models:" = "Những mẫu hàng đầu:";
 "Two quota burn-down charts in one tile." = "Hai biểu đồ ghi lại Hạn mức trong một ô.";
 "Usage & spend come from your console.groq.com browser session automatically. An API key is optional and only adds Enterprise Prometheus metrics." = "Việc sử dụng và chi tiêu tự động đến từ phiên trình duyệt console.groq.com của bạn. Khóa API là tùy chọn và chỉ thêm Enterprise Prometheus Chỉ số.";
-"Usage data appears after a refresh." = "Dữ liệu sử dụng xuất hiện sau khi làm mới.";
-"Usage data will appear once the app refreshes." = "Dữ liệu sử dụng sẽ xuất hiện sau khi ứng dụng được làm mới.";
 "Usage history chart with recent totals." = "Biểu đồ lịch sử sử dụng với tổng số gần đây.";
-"Usage history will appear after a refresh." = "Lịch sử sử dụng sẽ xuất hiện sau khi làm mới.";
 "Usage limit" = "Giới hạn sử dụng";
 "Usage limits and reset countdowns for one saved account." = "Giới hạn sử dụng và đặt lại đếm ngược cho một tài khoản đã lưu.";
 "Usage widget with a provider switcher." = "Tiện ích sử dụng với trình chuyển đổi nhà cung cấp.";
@@ -2116,6 +2114,8 @@
 "Poe usage history is unavailable." = "Lịch sử sử dụng Poe không khả dụng.";
 "Stored in ~/.codexbar/config.json. Get your key from poe.com/api/keys." = "Được lưu trữ trong ~/.codexbar/config.json. Nhận khóa của bạn từ poe.com/api/keys.";
 "Billing" = "Thanh toán";
+"Invoice billing" = "Thanh toán theo hóa đơn";
+"Prepaid" = "Trả trước";
 "Rate limit" = "Giới hạn tỷ lệ";
 "Billing and rate-limit data from the v0 Platform API" = "Dữ liệu thanh toán và giới hạn tỷ lệ từ Nền tảng v0 API";
 "v0 cost history is not available via the Platform API." = "Lịch sử chi phí v0 không có sẵn thông qua Nền tảng API.";
@@ -2467,7 +2467,7 @@
 "spend_performance_cache_help" = "Lượng đầu vào được lưu trong bộ nhớ đệm chia cho tổng đầu vào của các lượt đủ điều kiện. Được tính trọng số theo số token đầu vào, kèm phạm vi bao phủ của mẫu.";
 "spend_performance_metric_help" = "Về các số liệu quan sát này";
 "merged_icon_source_title" = "Nguồn biểu tượng kết hợp";
-"merged_icon_source_subtitle" = "Chọn nhà cung cấp hiển thị trên biểu tượng kết hợp khi thu gọn.";
+"merged_icon_source_subtitle" = "“Mức sử dụng cao nhất” chỉ so sánh hạn mức. Với nhà cung cấp không có hạn mức, hãy dùng “Lựa chọn hiện tại”.";
 "merged_icon_source_current_selection" = "Lựa chọn hiện tại";
 "merged_icon_source_highest_usage" = "Mức sử dụng cao nhất";
 "merged_icon_source_frontmost_app" = "Ứng dụng nhà cung cấp ở phía trước";
@@ -2743,6 +2743,137 @@
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Hiển thị tài khoản và giới hạn của nhà cung cấp này từ máy chủ trung tâm opencodex thay vì từ nguồn riêng. Trên máy chủ trung tâm, CodexBar chuyển tài khoản qua `ocx`; các máy Mac khác đọc tệp ảnh chụp của máy chủ trung tâm và yêu cầu nó chuyển. Thông tin đăng nhập ở lại trên máy chủ trung tâm; CodexBar không bao giờ đọc chúng.";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Hiển thị các tài khoản Claude của máy chủ trung tâm opencodex. Trên máy chủ trung tâm, CodexBar chuyển tài khoản đang dùng của nhóm qua `ocx`; các máy Mac khác đọc tệp ảnh chụp của máy chủ trung tâm và yêu cầu nó chuyển. Thông tin đăng nhập ở lại trên máy chủ trung tâm; CodexBar không bao giờ đọc chúng.";
 
+/* Opencodex local access and dashboard */
+"opencodex_access_title" = "API keys";
+"opencodex_access_refresh" = "Refresh";
+"opencodex_access_dashboard" = "Open dashboard";
+"opencodex_access_mutating" = "Changing a key… You can leave this pane while it completes.";
+"opencodex_access_refresh_failed" = "Refresh failed. Displayed keys cannot be changed until a successful refresh.";
+"opencodex_access_loading" = "Loading keys…";
+"opencodex_access_name" = "Key name";
+"opencodex_access_create" = "Create key";
+"opencodex_access_empty" = "No API keys.";
+"opencodex_access_usage_incomplete" = "Usage records are incomplete.";
+"opencodex_access_history_truncated" = "Earlier history is truncated.";
+"opencodex_access_attribution_since" = "Usage attribution since";
+"opencodex_access_advanced_hint" = "Manage provider and model restrictions in the dashboard. Unauthenticated loopback usage may not be attributed to this key.";
+"opencodex_access_revoke_title" = "Revoke this key?";
+"opencodex_access_revoke" = "Revoke key";
+"opencodex_access_cancel" = "Cancel";
+"opencodex_access_revoke_warning" = "Revoke “%@” (%@)? Connections using this key may stop working.";
+"opencodex_access_create_succeeded" = "Key created.";
+"opencodex_access_rename_succeeded" = "Key renamed.";
+"opencodex_access_revoke_succeeded" = "Key revoked.";
+"opencodex_access_confirmation_hint" = "Check the latest list before deciding what to do. Refresh cannot recover a newly created secret. No change is retried automatically.";
+"opencodex_access_duplicate_name" = "Another key has the same name. Check the masked prefix before acting.";
+"opencodex_access_created_at" = "Created";
+"opencodex_access_providers" = "Allowed providers";
+"opencodex_access_models" = "Allowed models";
+"opencodex_access_rename" = "Rename";
+"opencodex_access_save_name" = "Save name";
+"opencodex_access_metadata_unavailable" = "Not provided by the server";
+"opencodex_access_scope_empty" = "Empty list reported by the server";
+"opencodex_access_usage_unavailable" = "Cannot determine";
+"opencodex_access_no_usage" = "No recorded usage";
+"opencodex_access_requests_7d" = "Requests in 7 days";
+"opencodex_access_requests_total" = "Total recorded requests";
+"opencodex_access_last_used" = "Last used";
+"opencodex_access_rename_unchecked" = "Safe rename support has not been checked for this installation.";
+"opencodex_access_created_title" = "Your new API key";
+"opencodex_access_secret_once" = "Save this secret now. Closing this result releases the app’s copy; it cannot be retrieved later.";
+"opencodex_access_hide" = "Hide secret";
+"opencodex_access_reveal" = "Show secret";
+"opencodex_access_copy" = "Copy secret";
+"opencodex_access_clipboard_policy" = "Copies are marked as local, concealed, and temporary. The default expiry is 60 seconds; later clipboard contents are preserved.";
+"opencodex_access_copied" = "Copied.";
+"opencodex_access_copy_failed" = "Could not copy. Try the copy button again.";
+"opencodex_access_close" = "Close and release secret";
+"opencodex_access_error_executableMissing" = "Opencodex executable was not found.";
+"opencodex_access_error_unsupportedRole" = "Manage keys on the hub. This device does not own local management.";
+"opencodex_access_error_serverStopped" = "The Opencodex server is stopped.";
+"opencodex_access_error_invalidResponse" = "The Opencodex response is invalid.";
+"opencodex_access_error_outputTooLarge" = "The Opencodex response exceeded the size limit.";
+"opencodex_access_error_communicationFailed" = "Could not communicate with Opencodex.";
+"opencodex_access_error_permissionDenied" = "Management permission was denied.";
+"opencodex_access_error_notFound" = "The key no longer exists. Refresh and select again.";
+"opencodex_access_error_invalidName" = "Enter 1–64 UTF-16 units, without control characters or CLI option names.";
+"opencodex_access_error_invalidID" = "The key ID is invalid. Refresh and select again.";
+"opencodex_access_error_renameUnsupported" = "Safe rename is unsupported in this Opencodex installation. Other key actions remain available.";
+"opencodex_access_error_confirmationRequired" = "The change outcome needs confirmation.";
+"opencodex_access_error_mutationInProgress" = "Another key change is in progress.";
+"opencodex_access_error_invalidDashboardURL" = "The dashboard address is not a safe HTTP(S) address.";
+"Opencodex Dashboard" = "Opencodex Dashboard";
+"Loading Opencodex dashboard…" = "Loading Opencodex dashboard…";
+"Current dashboard address" = "Current dashboard address";
+"Retry dashboard" = "Retry dashboard";
+"Open in browser" = "Open in browser";
+"Manage Opencodex on the hub for this connection." = "Manage Opencodex on the hub for this connection.";
+"The Opencodex server is stopped. Start it and try again." = "The Opencodex server is stopped. Start it and try again.";
+"The Opencodex status response is invalid." = "The Opencodex status response is invalid.";
+"The dashboard address is missing or unsafe." = "The dashboard address is missing or unsafe.";
+"Could not read Opencodex status." = "Could not read Opencodex status.";
+"Could not load the Opencodex dashboard." = "Could not load the Opencodex dashboard.";
+"A secure connection to the dashboard could not be established." = "A secure connection to the dashboard could not be established.";
+"An external page was blocked. Open it in your browser to continue." = "An external page was blocked. Open it in your browser to continue.";
+"Could not open the external browser." = "Could not open the external browser.";
+"Could not create the dashboard window." = "Could not create the dashboard window.";
+"Opencodex" = "Opencodex";
+"opencodex_settings_executable" = "Opencodex executable path";
+"opencodex_settings_default_path" = "Default executable search";
+"opencodex_settings_apply_path" = "Apply path";
+"opencodex_settings_path_hint" = "Leave empty to use the default search locations. This path is independent of provider account settings.";
+"opencodex_settings_invalid_path" = "Enter an absolute executable path or leave it empty. Control characters and URLs are not accepted.";
+
+// Hub account management
+"Manage hub accounts..." = "Manage hub accounts...";
+"Could not open the hub browser." = "Could not open the hub browser.";
+"Add or re-authenticate accounts in the hub browser. Credentials stay on the hub." = "Add or re-authenticate accounts in the hub browser. Credentials stay on the hub.";
+"The switch result is unknown. Refresh the hub before trying again." = "The switch result is unknown. Refresh the hub before trying again.";
+
+/* Hub account sign-in and usage periods. */
+"Opening account sign-in in your browser…" = "Opening account sign-in in your browser…";
+"Finish signing in in your browser. Return here to check the account list." = "Finish signing in in your browser. Return here to check the account list.";
+"Checking the account list…" = "Checking the account list…";
+"Account list checked. Confirm that your account appears; opening the browser does not complete sign-in." = "Account list checked. Confirm that your account appears; opening the browser does not complete sign-in.";
+"This Mac still has a read-only or outdated account list. A new sign-in may not appear until hub sync resumes." = "This Mac still has a read-only or outdated account list. A new sign-in may not appear until hub sync resumes.";
+"Could not open your browser. Try opening the account manager again." = "Could not open your browser. Try opening the account manager again.";
+"Could not reach the account manager. Check the hub connection and try again." = "Could not reach the account manager. Check the hub connection and try again.";
+"Could not refresh the account list. Your browser sign-in may still have succeeded. Try refreshing again." = "Could not refresh the account list. Your browser sign-in may still have succeeded. Try refreshing again.";
+"Hub accounts" = "Hub accounts";
+"Open the account manager in your browser, then add an account or sign in again. Your sign-in stays on the hub." = "Open the account manager in your browser, then add an account or sign in again. Your sign-in stays on the hub.";
+"For sign-in from another Mac, the account manager also offers device-code sign-in." = "For sign-in from another Mac, the account manager also offers device-code sign-in.";
+"Add account or sign in again..." = "Add account or sign in again...";
+"Refresh accounts" = "Refresh accounts";
+"Accounts: %@" = "Accounts: %@";
+"Read-only account list; last hub update is unknown." = "Read-only account list; last hub update is unknown.";
+"Hub list updated %@." = "Hub list updated %@.";
+"Last hub update is unknown." = "Last hub update is unknown.";
+"Monthly usage" = "Monthly usage";
+"%@-minute usage" = "%@-minute usage";
+"%@-day usage" = "%@-day usage";
+"%@-hour usage" = "%@-hour usage";
+"No accounts found. Add an account in your browser, then refresh this list." = "No accounts found. Add an account in your browser, then refresh this list.";
+"Account list not loaded. Choose Refresh accounts to check it." = "Account list not loaded. Choose Refresh accounts to check it.";
+"Finish sign-in in your browser, then refresh accounts." = "Finish sign-in in your browser, then refresh accounts.";
+"Account list checked. Verify your account is listed." = "Account list checked. Verify your account is listed.";
+"Account list is not current. Check hub sync." = "Account list is not current. Check hub sync.";
+"Account management needs attention. Open Settings." = "Account management needs attention. Open Settings.";
+"Hub HTTPS management address" = "Hub HTTPS management address";
+"https://your-hub.example" = "https://your-hub.example";
+"Save address" = "Save address";
+"Use the hub's management address, not 127.0.0.1 or its data API address. For a Tailscale address, this Mac must be connected to the same tailnet." = "Use the hub's management address, not 127.0.0.1 or its data API address. For a Tailscale address, this Mac must be connected to the same tailnet.";
+"Set the hub's HTTPS management address in Settings. The local data tunnel cannot open the account manager." = "Set the hub's HTTPS management address in Settings. The local data tunnel cannot open the account manager.";
+
+"monthly_daily_target_format" = "≈ %@ / ngày để đủ dùng đến khi đặt lại";
+
+"Trae CN" = "Trae CN";
+"Show Trae CN usage" = "Hiển thị mức sử dụng Trae CN";
+"Sign in to Trae CN at trae.cn, then refresh CodexBar." = "Đăng nhập vào Trae CN tại trae.cn, rồi làm mới CodexBar.";
+"Trae CN usage response format changed." = "Định dạng phản hồi mức sử dụng Trae CN đã thay đổi.";
+"Trae CN request failed. Try refreshing later." = "Yêu cầu Trae CN không thành công. Hãy thử làm mới sau.";
+"Use --provider copilot." = "Dùng --provider copilot.";
+"Config changed during login. Please try again." = "Cấu hình đã thay đổi trong khi đăng nhập. Vui lòng thử lại.";
+
 /* Public Codex reset announcements. */
 "reset_news_title" = "Codex reset news";
 "reset_news_help" = "Show public reset reports in the Codex menu. Checks every five minutes while enabled; no account sign-in is shared.";
@@ -2766,3 +2897,9 @@
 "reset_news_stale" = "Data may be outdated";
 "reset_news_attribution" = "Data from %@";
 "reset_news_disclaimer" = "Community reports. Check your account for actual limits.";
+"Could not start claude /login" = "Không thể bắt đầu claude /đăng nhập";
+"menu_bar_style_subtitle" = "Cách hiển thị mục trên thanh menu.";
+"claude /login exited with status %d." = "claude /đăng nhập đã thoát với trạng thái %d .";
+"Usage data appears after a refresh." = "Dữ liệu sử dụng xuất hiện sau khi làm mới.";
+"Usage data will appear once the app refreshes." = "Dữ liệu sử dụng sẽ xuất hiện sau khi ứng dụng được làm mới.";
+"Usage history will appear after a refresh." = "Lịch sử sử dụng sẽ xuất hiện sau khi làm mới.";

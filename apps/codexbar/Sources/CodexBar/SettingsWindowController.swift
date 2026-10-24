@@ -27,6 +27,7 @@ final class SettingsWindowController: NSWindowController {
     private let presentationFailed: @MainActor () -> Void
     private let logger = CodexBarLog.logger(LogCategories.app)
     private var retainedWindow: NSWindow?
+    private var openCodexAccess: OpenCodexAccessSettings?
 
     init(
         selection: PreferencesSelection,
@@ -63,6 +64,7 @@ final class SettingsWindowController: NSWindowController {
         cloudSyncState: CloudSyncState,
         updater: UpdaterProviding,
         selection: PreferencesSelection,
+        openCodexAccess: OpenCodexAccessSettings? = nil,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator,
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator,
         runProviderLoginFlow: @escaping @MainActor (UsageProvider) async -> Void)
@@ -74,6 +76,7 @@ final class SettingsWindowController: NSWindowController {
                 cloudSyncState: cloudSyncState,
                 updater: updater,
                 selection: selection,
+                openCodexAccess: openCodexAccess,
                 managedCodexAccountCoordinator: managedCodexAccountCoordinator,
                 codexAccountPromotionCoordinator: codexAccountPromotionCoordinator,
                 runProviderLoginFlow: runProviderLoginFlow)
@@ -88,10 +91,8 @@ final class SettingsWindowController: NSWindowController {
                 backing: .buffered,
                 defer: false)
             window.contentViewController = hostingController
-            window.title = selection.pane.title
-            window.titlebarAppearsTransparent = true
+            window.title = selection.title
             SettingsWindowToolbar.configure(window)
-            window.titlebarSeparatorStyle = .none
             window.isReleasedWhenClosed = false
             SettingsWindowSizing.enforceMinimumSize(window)
             if !window.setFrameUsingName(SettingsWindowIdentity.frameAutosaveName) {
@@ -99,6 +100,31 @@ final class SettingsWindowController: NSWindowController {
             }
             window.setFrameAutosaveName(SettingsWindowIdentity.frameAutosaveName)
             return window
+        }
+        self.openCodexAccess = openCodexAccess
+        openCodexAccess?.dashboard.didActivate = { [weak self] in
+            self?.refreshOpenCodexIfVisible()
+        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.settingsWindowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil)
+    }
+
+    @objc private func settingsWindowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === self.window else { return }
+        self.refreshOpenCodexIfVisible()
+    }
+
+    func refreshOpenCodexIfVisible() {
+        guard let feature = self.openCodexAccess,
+              self.window?.isVisible == true,
+              self.selection.pane == .opencodex
+        else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            await feature.activate(isSettingsVisible: self.window?.isVisible == true, selectedPane: self.selection.pane)
         }
     }
 

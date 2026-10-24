@@ -97,11 +97,12 @@ extension UsageStore {
         _ provider: UsageProvider,
         allowDisabled: Bool = false,
         coalesceIfRefreshing: Bool = false,
-        codexAccountIDs: Set<String>? = nil) async
+        codexAccountIDs: Set<String>? = nil,
+        hubAccountsOnly: Bool = false) async
     {
         // Codex source reconciliation can persist a settings correction. Perform it before
         // capturing the publication revision so the request cannot invalidate itself.
-        self.prepareRefreshState(for: provider)
+        if !hubAccountsOnly { self.prepareRefreshState(for: provider) }
         while coalesceIfRefreshing,
               let existingState = self.providerRefreshCoordinator.coalescingState(for: provider.instanceID)
         {
@@ -121,7 +122,7 @@ extension UsageStore {
             generation: request.generation,
             enablementRevision: self.settings.providerEnablementRevision(for: provider),
             configRevision: self.settings.providerConfigRevision(for: provider),
-            tokenCostScopeSignature: Self.tokenCostRequiresProviderSnapshot(provider)
+            tokenCostScopeSignature: !hubAccountsOnly && Self.tokenCostRequiresProviderSnapshot(provider)
                 ? self.tokenSnapshotScopeSignature(for: provider)
                 : nil,
             allowDisabled: allowDisabled)
@@ -142,18 +143,26 @@ extension UsageStore {
                     generation: request.generation,
                     enablementRevision: self.settings.providerEnablementRevision(for: provider),
                     configRevision: self.settings.providerConfigRevision(for: provider),
-                    tokenCostScopeSignature: Self.tokenCostRequiresProviderSnapshot(provider)
+                    tokenCostScopeSignature: !hubAccountsOnly && Self.tokenCostRequiresProviderSnapshot(provider)
                         ? self.tokenSnapshotScopeSignature(for: provider)
                         : nil,
                     allowDisabled: allowDisabled)
                 snapshotUpdatedAtBeforeRefresh = self.snapshot(for: provider.instanceID)?.updatedAt
                 didStartRefresh = true
                 await ProviderRefreshRequestContext.withNewRequest {
-                    await self.refreshProviderTracked(
-                        provider,
-                        allowDisabled: allowDisabled,
-                        generation: request.generation,
-                        codexAccountIDs: codexAccountIDs)
+                    if hubAccountsOnly {
+                        if let override = self._test_openCodexHubRefreshOverride {
+                            await override(provider)
+                        } else {
+                            await self.refreshOpenCodexHubCard(provider, generation: request.generation)
+                        }
+                    } else {
+                        await self.refreshProviderTracked(
+                            provider,
+                            allowDisabled: allowDisabled,
+                            generation: request.generation,
+                            codexAccountIDs: codexAccountIDs)
+                    }
                 }
             }
             let publishedNewSnapshot = didStartRefresh &&
