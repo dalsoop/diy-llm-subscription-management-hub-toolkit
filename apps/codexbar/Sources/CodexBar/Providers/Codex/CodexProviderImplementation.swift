@@ -22,6 +22,8 @@ struct CodexProviderImplementation: ProviderImplementation {
         _ = settings.codexOpenCodexHubEnabled
         _ = settings.codexOpenCodexHubExecutablePath
         _ = settings.codexOpenCodexHubSnapshotPath
+        _ = settings.codexResetAnnouncementsEnabled
+        _ = settings.codexResetAnnouncementsProviderURL
     }
 
     @MainActor
@@ -81,6 +83,7 @@ struct CodexProviderImplementation: ProviderImplementation {
         ].joined(separator: " ")
 
         return [
+            CodexResetAnnouncementsSettings.toggle(context: context),
             OpenCodexHubSettingsDescriptors.toggle(
                 provider: .codex,
                 enabled: \.codexOpenCodexHubEnabled,

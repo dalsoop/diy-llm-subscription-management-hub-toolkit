@@ -165,6 +165,9 @@ struct MenuCardRowPayload {
     let containsInteractiveControls: Bool
     let usesGPUSelection: Bool
     let onClick: (() -> Void)?
+    var contentForWidth: ((CGFloat) -> AnyView)?
+    var contentWidth: CGFloat?
+    var heightCacheFingerprint: String?
 }
 
 /// One stable AppKit class for every menu-card row. Keeping the outer view attached while payloads
@@ -176,6 +179,7 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
     // Forced vibrancy makes white GPU-tinted content disappear on macOS 15.
     private let hosting: NSHostingView<MenuCardSectionContainerView<AnyView>>
     private var measuredSize: NSSize?
+    private var renderedContentWidth: CGFloat?
     private var selectionView: NSVisualEffectView?
     private var tintFilter: CIFilter?
     private(set) var allowsMenuHighlight: Bool
@@ -195,6 +199,10 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
     private static let selectionCornerRadius: CGFloat = 6
     private static let selectionFadeDuration: CFTimeInterval = 0.06
 
+    var needsWidthRemeasurement: Bool {
+        self.measuredSize == nil
+    }
+
     override var intrinsicContentSize: NSSize {
         let width = self.frame.width > 0 ? self.frame.width : NSView.noIntrinsicMetric
         return NSSize(width: width, height: self.measuredSize?.height ?? self.hosting.intrinsicContentSize.height)
@@ -206,6 +214,7 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
             self.measuredSize = nil
         }
         super.setFrameSize(newSize)
+        self.updateContentWidth(newSize.width)
         if widthChanged {
             self.invalidateIntrinsicContentSize()
         }
@@ -230,6 +239,7 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
         self.highlightState = highlightState
         self.interactiveRegionStore = interactiveRegionStore
         self.rowPayload = payload
+        self.renderedContentWidth = payload.contentWidth
         self.allowsMenuHighlight = payload.allowsMenuHighlight
         self.containsInteractiveControls = payload.containsInteractiveControls
         self.onClick = payload.onClick
@@ -256,6 +266,7 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
     func replant(_ payload: MenuCardRowPayload, refreshMonitor: MenuCardRefreshMonitor?) {
         self.measuredSize = nil
         self.rowPayload = payload
+        self.renderedContentWidth = payload.contentWidth
         self.allowsMenuHighlight = payload.allowsMenuHighlight
         self.containsInteractiveControls = payload.containsInteractiveControls
         self.onClick = payload.onClick
@@ -426,9 +437,22 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
     }
 
     func measuredHeight(width: CGFloat) -> CGFloat {
+        self.updateContentWidth(width)
         self.hosting.frame = NSRect(origin: self.hosting.frame.origin, size: NSSize(width: width, height: 1))
         self.hosting.layoutSubtreeIfNeeded()
         return self.hosting.fittingSize.height
+    }
+
+    private func updateContentWidth(_ width: CGFloat) {
+        guard width > 0, self.rowPayload.contentForWidth != nil,
+              self.renderedContentWidth.map({ abs($0 - width) > 0.5 }) ?? true else { return }
+        self.renderedContentWidth = width
+        self.hosting.rootView = Self.makeRootView(
+            payload: self.rowPayload,
+            highlightState: self.highlightState,
+            refreshMonitor: self.hosting.rootView.refreshMonitor,
+            interactiveRegionStore: self.interactiveRegionStore,
+            width: width)
     }
 
     func setHighlighted(_ highlighted: Bool) {
@@ -518,9 +542,11 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
         payload: MenuCardRowPayload,
         highlightState: MenuCardHighlightState,
         refreshMonitor: MenuCardRefreshMonitor?,
-        interactiveRegionStore: MenuCardInteractiveRegionStore) -> MenuCardSectionContainerView<AnyView>
+        interactiveRegionStore: MenuCardInteractiveRegionStore,
+        width: CGFloat? = nil) -> MenuCardSectionContainerView<AnyView>
     {
-        MenuCardSectionContainerView(
+        let content = width.flatMap { payload.contentForWidth?($0) } ?? payload.content
+        return MenuCardSectionContainerView(
             highlightState: highlightState,
             showsSubmenuIndicator: payload.showsSubmenuIndicator,
             submenuIndicatorAlignment: payload.submenuIndicatorAlignment,
@@ -528,7 +554,7 @@ final class MenuRowContainerView: NSView, MenuCardHighlighting, MenuCardMeasurin
             refreshMonitor: refreshMonitor,
             interactiveRegionStore: interactiveRegionStore)
         {
-            payload.content
+            content
         }
     }
 

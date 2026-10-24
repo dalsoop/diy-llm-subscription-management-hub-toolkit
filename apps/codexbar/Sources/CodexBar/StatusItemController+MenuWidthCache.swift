@@ -7,7 +7,8 @@ extension StatusItemController {
     func menuCardWidth(
         for providers: [UsageProvider],
         selectedProvider: UsageProvider?,
-        descriptor: MenuDescriptor) -> CGFloat
+        descriptor: MenuDescriptor,
+        renderedMenu: NSMenu? = nil) -> CGFloat
     {
         let usesMergedSwitcherWidth = self.shouldMergeIcons &&
             self.switcherProviderIDs(enabledFirstPartyProviders: providers).count > 1
@@ -25,7 +26,9 @@ extension StatusItemController {
         } else {
             [(selectedProvider, descriptor.sections)]
         }
-        return self.measuredMenuCardWidth(for: sectionSets)
+        let measured = self.measuredMenuCardWidth(for: sectionSets)
+        guard let renderedMenu, self.openMenus[ObjectIdentifier(renderedMenu)] != nil else { return measured }
+        return max(measured, self.renderedMenuWidth(for: renderedMenu))
     }
 
     func measuredMenuCardWidth(

@@ -123,7 +123,9 @@ extension StatusItemController {
         // in a fixed-width hosted row instead, so it truncates within the width chosen by the rest
         // of the menu rather than expanding the popup for an unusually long project or session name.
         let item = self.makeMenuCardItem(
-            AgentSessionMenuRowView(title: title, width: width),
+            { resolvedWidth in
+                AgentSessionMenuRowView(title: title, width: resolvedWidth)
+            },
             id: "agentSession:\(remoteHost ?? "local"):\(session.id)",
             width: width,
             heightCacheScope: "agentSession",

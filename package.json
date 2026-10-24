@@ -10,7 +10,8 @@
     "opencodex:start": "bun run --cwd packages/opencodex src/cli/index.ts start --port 10100",
     "opencodex:test": "bun test --cwd packages/opencodex",
     "codexbar:build": "swift build --package-path apps/codexbar -c release",
-    "codexbar:test": "swift test --package-path apps/codexbar"
+    "codexbar:test": "make -C apps/codexbar test",
+    "codexbar:check": "make -C apps/codexbar check"
   },
   "license": "MIT"
 }

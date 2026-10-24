@@ -31,13 +31,13 @@ extension StatusItemController {
                     ?? L("Accounts are managed on the opencodex hub.")]
             }
             for line in lines {
-                self.addOpenCodexHubNotice(line, to: menu)
+                self.addOpenCodexHubNotice(line, to: menu, width: context.menuWidth)
             }
         }
         if readsFromOpenCodex {
             let hidePersonalInfo = self.settings.hidePersonalInfo
             for line in self.store.claudeSwapHubSwitchStatus.menuLines(hidePersonalInfo: hidePersonalInfo) {
-                self.addOpenCodexHubNotice(line, to: menu)
+                self.addOpenCodexHubNotice(line, to: menu, width: context.menuWidth)
             }
         }
         if display.showsSwitcher {

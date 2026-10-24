@@ -62,6 +62,13 @@ final class InlineIconToggleButton: NSButton {
         }
     }
 
+    func useTextOnlyLayout() {
+        self.stack.detachesHiddenViews = true
+        self.iconView.isHidden = true
+        self.stack.spacing = 0
+        self.invalidateIntrinsicContentSize()
+    }
+
     func setContentTintColor(_ color: NSColor?) {
         self.iconView.contentTintColor = color
         self.titleField.textColor = color

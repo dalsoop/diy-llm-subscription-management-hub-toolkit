@@ -2745,3 +2745,27 @@
 "Read accounts from an opencodex hub" = "خواندن حساب‌ها از هاب opencodex";
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "حساب‌ها و محدودیت‌های این ارائه‌دهنده را به‌جای منابع خودش از هاب opencodex نشان می‌دهد. روی هاب، CodexBar حساب‌ها را با `ocx` تعویض می‌کند؛ Macهای دیگر فایل عکس فوری هاب را می‌خوانند و از هاب می‌خواهند تعویض کند. اعتبارنامه‌ها روی هاب می‌مانند؛ CodexBar هرگز آن‌ها را نمی‌خواند.";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "حساب‌های Claude هاب opencodex را نشان می‌دهد. روی هاب، CodexBar حساب فعال مجموعه را با `ocx` تعویض می‌کند؛ Macهای دیگر فایل عکس فوری هاب را می‌خوانند و از هاب می‌خواهند تعویض کند. اعتبارنامه‌ها روی هاب می‌مانند؛ CodexBar هرگز آن‌ها را نمی‌خواند.";
+
+/* Public Codex reset announcements. */
+"reset_news_title" = "Codex reset news";
+"reset_news_help" = "Show public reset reports in the Codex menu. Checks every five minutes while enabled; no account sign-in is shared.";
+"reset_news_provider_url" = "Provider URL";
+"reset_news_url_help" = "Full HTTPS JSON endpoint from codex-resets.com, tokenusage.dev, codexreset.ai, or a compatible provider. Leave empty to restore the default.";
+"reset_news_save" = "Save URL and check";
+"reset_news_loading" = "Checking reset news…";
+"reset_news_invalid_url" = "Enter an HTTPS URL without credentials, a query, or a fragment.";
+"reset_news_unsupported" = "This URL did not return a supported reset feed.";
+"reset_news_unavailable" = "Reset news is unavailable. Previously fetched data may be outdated.";
+"reset_news_retry_later" = "The provider asked us to retry later.";
+"reset_news_checked" = "Last checked: %@";
+"reset_news_data_time" = "Source updated: %@";
+"reset_news_latest" = "Latest reported reset";
+"reset_news_observed" = "Latest observed reset";
+"reset_news_banked" = "Latest banked reset grant";
+"reset_news_announced" = "Latest reset announcement";
+"reset_news_scheduled" = "Reset scheduled · awaiting confirmation";
+"reset_news_awaiting" = "Awaiting execution confirmation";
+"reset_news_outlook" = "Reset outlook · unofficial";
+"reset_news_stale" = "Data may be outdated";
+"reset_news_attribution" = "Data from %@";
+"reset_news_disclaimer" = "Community reports. Check your account for actual limits.";

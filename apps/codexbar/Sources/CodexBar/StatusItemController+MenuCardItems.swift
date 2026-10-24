@@ -13,16 +13,31 @@ extension StatusItemController {
     func refreshMenuCardHeights(in menu: NSMenu) {
         let width = self.renderedMenuWidth(for: menu)
         for item in menu.items {
+            if let view = item.view as? ProviderSwitcherView {
+                if abs(view.frame.width - width) > 0.5 {
+                    view.setFrameSize(NSSize(width: width, height: view.frame.height))
+                }
+                continue
+            }
             if let view = item.view as? PersistentRefreshMenuView {
                 guard abs(view.frame.width - width) > 0.5 else { continue }
                 view.applySize(width: width, height: PersistentRefreshRowMetrics.defaults.rowHeight)
                 continue
             }
+            if let view = item.view as? WrappedSecondaryMenuTextView {
+                if abs(view.frame.width - width) > 0.5 || view.needsWidthRemeasurement {
+                    view.applyMeasuredSize(width: width, height: view.measuredHeight(width: width))
+                }
+                continue
+            }
             guard let view = item.view, let measuring = view as? any MenuCardMeasuring else { continue }
-            guard abs(view.frame.width - width) > 0.5 else { continue }
+            let row = view as? MenuRowContainerView
+            guard abs(view.frame.width - width) > 0.5 || row?.needsWidthRemeasurement == true else { continue }
             let id = item.representedObject as? String ?? "menuCard"
             let scope = self.menuProvider(for: menu)?.rawValue ?? id
-            let height = self.cachedMenuCardHeight(for: id, scope: scope, width: width) {
+            let height = self.cachedMenuCardHeight(
+                for: id, scope: scope, width: width, fingerprint: row?.rowPayload.heightCacheFingerprint)
+            {
                 self.menuCardHeight(for: view, width: width)
             }
             measuring.applyMeasuredSize(width: width, height: height)
@@ -31,6 +46,33 @@ extension StatusItemController {
 
     func makeMenuCardItem(
         _ view: some View,
+        id: String,
+        width: CGFloat,
+        heightCacheScope: String? = nil,
+        heightCacheFingerprint: String? = nil,
+        submenu: NSMenu? = nil,
+        submenuIndicatorAlignment: Alignment = .topTrailing,
+        submenuIndicatorTopPadding: CGFloat = 8,
+        containsInteractiveControls: Bool = false,
+        usesGPUSelection: Bool = false,
+        onClick: (() -> Void)? = nil) -> NSMenuItem
+    {
+        self.makeMenuCardItem(
+            { _ in view },
+            id: id,
+            width: width,
+            heightCacheScope: heightCacheScope,
+            heightCacheFingerprint: heightCacheFingerprint,
+            submenu: submenu,
+            submenuIndicatorAlignment: submenuIndicatorAlignment,
+            submenuIndicatorTopPadding: submenuIndicatorTopPadding,
+            containsInteractiveControls: containsInteractiveControls,
+            usesGPUSelection: usesGPUSelection,
+            onClick: onClick)
+    }
+
+    func makeMenuCardItem(
+        _ render: @escaping (CGFloat) -> some View,
         id: String,
         width: CGFloat,
         heightCacheScope: String? = nil,
@@ -68,17 +110,24 @@ extension StatusItemController {
             sender.representedObject = object
             NSApp.sendAction(selector, to: self, from: sender)
         })
+        let settings = self.settings
+        let contentForWidth: (CGFloat) -> AnyView = { actualWidth in
+            AnyView(render(actualWidth)
+                .environment(\.providerMenuChartSettings, settings)
+                .environment(\.providerCardAction, cardAction))
+        }
         let payload = MenuCardRowPayload(
-            content: AnyView(view
-                .environment(\.providerMenuChartSettings, self.settings)
-                .environment(\.providerCardAction, cardAction)),
+            content: contentForWidth(width),
             showsSubmenuIndicator: submenu != nil,
             submenuIndicatorAlignment: submenuIndicatorAlignment,
             submenuIndicatorTopPadding: submenuIndicatorTopPadding,
             allowsMenuHighlight: allowsMenuHighlight,
             containsInteractiveControls: containsInteractiveControls,
             usesGPUSelection: usesGPUSelection,
-            onClick: onClick)
+            onClick: onClick,
+            contentForWidth: contentForWidth,
+            contentWidth: width,
+            heightCacheFingerprint: heightCacheFingerprint)
         let hosting: ErasedMenuCardHostingView
         if let recycled = self.takeRecyclableMenuCardView(
             for: id,

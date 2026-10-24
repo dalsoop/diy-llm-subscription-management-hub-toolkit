@@ -2709,3 +2709,27 @@
 "Read accounts from an opencodex hub" = "opencodex 허브에서 계정 읽기";
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "이 공급자의 계정과 한도를 자체 소스 대신 opencodex 허브에서 보여 줍니다. 허브에서는 CodexBar가 `ocx`로 계정을 전환하고, 다른 Mac은 허브의 스냅샷 파일을 읽고 허브에 전환을 요청합니다. 자격 증명은 허브에 남으며 CodexBar는 절대 읽지 않습니다.";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "opencodex 허브의 Claude 계정을 표시합니다. 허브에서는 CodexBar가 `ocx`로 풀의 활성 계정을 전환하고, 다른 Mac은 허브의 스냅샷 파일을 읽고 허브에 전환을 요청합니다. 자격 증명은 허브에 남으며 CodexBar는 절대 읽지 않습니다.";
+
+/* Public Codex reset announcements. */
+"reset_news_title" = "Codex 리셋 소식";
+"reset_news_help" = "Codex 메뉴에 공개 리셋 소식을 표시합니다. 켜져 있는 동안 5분마다 확인하며 계정 로그인 정보는 공유하지 않습니다.";
+"reset_news_provider_url" = "Provider URL";
+"reset_news_url_help" = "codex-resets.com, tokenusage.dev, codexreset.ai 또는 호환 공급자의 HTTPS JSON API 전체 주소입니다. 비우면 기본 주소로 복원합니다.";
+"reset_news_save" = "URL 저장 및 확인";
+"reset_news_loading" = "리셋 소식 확인 중…";
+"reset_news_invalid_url" = "인증 정보, 쿼리, 프래그먼트가 없는 HTTPS URL을 입력하세요.";
+"reset_news_unsupported" = "이 URL은 지원하는 리셋 피드를 반환하지 않았습니다.";
+"reset_news_unavailable" = "리셋 소식을 가져올 수 없습니다. 이전 데이터는 최신 정보가 아닐 수 있습니다.";
+"reset_news_retry_later" = "공급자가 나중에 다시 시도하도록 요청했습니다.";
+"reset_news_checked" = "마지막 확인: %@";
+"reset_news_data_time" = "출처 갱신: %@";
+"reset_news_latest" = "최근 보고된 리셋";
+"reset_news_observed" = "최근 관측된 리셋";
+"reset_news_banked" = "최근 적립형 리셋 지급";
+"reset_news_announced" = "최근 리셋 공지";
+"reset_news_scheduled" = "리셋 예정 · 실행 확인 대기";
+"reset_news_awaiting" = "실행 확인 대기 중";
+"reset_news_outlook" = "리셋 전망 · 비공식";
+"reset_news_stale" = "최신 정보가 아닐 수 있음";
+"reset_news_attribution" = "데이터 출처: %@";
+"reset_news_disclaimer" = "커뮤니티 소식입니다. 실제 한도는 계정에서 확인하세요.";

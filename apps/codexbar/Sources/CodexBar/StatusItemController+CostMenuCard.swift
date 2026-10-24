@@ -57,10 +57,12 @@ extension StatusItemController {
         }
 
         let item = self.makeMenuCardItem(
-            CostMenuCardRowView(
-                title: title,
-                detailLines: visibleDetailLines,
-                width: width),
+            { resolvedWidth in
+                CostMenuCardRowView(
+                    title: title,
+                    detailLines: visibleDetailLines,
+                    width: resolvedWidth)
+            },
             id: "menuCardCost",
             width: width,
             heightCacheScope: model.provider.rawValue,

@@ -6,7 +6,8 @@ import CodexBarCore
 enum OpenCodexHubAccountProjection {
     static let identitySource = "opencodex-hub"
 
-    /// One row per hub account, in the hub's order; the 1-based position is the row's opaque id.
+    /// Usage rows exclude paused registrations; account management retains the full hub inventory.
+    /// IDs keep the original 1-based pool position so a filtered row still addresses the right account.
     /// `canActivate` is true only for accounts this Mac may switch the hub to right now.
     static func accounts(
         for pool: OpenCodexHubPool,
@@ -14,7 +15,7 @@ enum OpenCodexHubAccountProjection {
         now: Date = Date()) -> [ProviderAccountUsageSnapshot]
     {
         let provider = pool.provider.usageProvider
-        return pool.accounts.enumerated().map { index, account in
+        return pool.accounts.enumerated().filter { !$0.element.isPaused }.map { index, account in
             ProviderAccountUsageSnapshot(
                 id: ProviderAccountIdentity(source: self.identitySource, opaqueID: String(index + 1)),
                 provider: provider,
@@ -45,7 +46,6 @@ enum OpenCodexHubAccountProjection {
     }
 
     private static func stateText(for account: OpenCodexHubAccount) -> String? {
-        if account.isPaused { return L("Disabled") }
         if account.requiresReauthentication { return L("Re-authenticate") }
         if account.quotaUnavailable || account.quota.isEmpty { return L("Limits not available") }
         return nil
@@ -69,6 +69,7 @@ extension StatusItemController {
         else { return false }
         let allowsSwitching = !state.isSwitching && !state.switchStatus.isPending
         let accounts = OpenCodexHubAccountProjection.accounts(for: pool, allowsSwitching: allowsSwitching)
+        guard !accounts.isEmpty else { return false }
         switch self.settings.multiAccountMenuLayout {
         case .stacked:
             self.addStackedOpenCodexHubCards(accounts, pool: pool, to: menu, captureMenu: captureMenu, context: context)
