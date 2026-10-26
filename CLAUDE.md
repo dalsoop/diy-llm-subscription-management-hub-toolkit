@@ -8,6 +8,9 @@ This toolkit combines the Swift CodexBar usage/account menu bar app with the Bun
 .
 ├── AGENTS.md                         → shared agent entry point
 ├── CLAUDE.md                         → identical Claude entry point
+├── .github/
+│   ├── workflows/codexbar.yml        → active root CI on the self-hosted macOS runner
+│   └── runner/job-started-hook.sh    → second-layer runner-side job refusal (installed on the CI machine)
 ├── docs/
 │   ├── architecture.md               → components, boundaries, and request/data flow
 │   ├── business-rules.md             → identity, quota, freshness, and account transitions
@@ -23,7 +26,8 @@ This toolkit combines the Swift CodexBar usage/account menu bar app with the Bun
 │           ├── index.md              → decision inventory
 │           ├── 0001-hub-capability-projection.md → least-privilege linked-client reporting
 │           ├── 0002-optional-lab-registration.md → optional activation and synchronous startup
-│           └── 0003-native-test-executables.md → native coverage without test-bundle runtimes
+│           ├── 0003-native-test-executables.md → native coverage without test-bundle runtimes
+│           └── 0004-self-hosted-macos-runner.md → self-hosted CI runner behind fork-run approval
 ├── apps/
 │   └── codexbar/
 │       ├── AGENTS.md                 → menu bar application, Swift package, and safe validation
@@ -67,7 +71,7 @@ Read `docs/standards.md`, `docs/engineering-notes.md`, and the relevant componen
 - For authentication, OAuth, management, CORS, cookie access, or credential logging, read the security policy and existing admission/access-gate patterns; obtain explicit security review.
 - For shared OpenCodex source, inspect its existing structure manifest/index and every mapped subsystem contract before editing; a source area can have several owning explanations.
 - For GUI copy, inspect the canonical locale, all locale modules, and existing design-system contracts; machine text is not a translation label.
-- For test-runner or CI work, inspect the root workflow, isolated environment setup, direct-test inventory, and cache/fallback checks. Nested workflows are not active CI evidence.
+- For test-runner or CI work, inspect the root workflow, the runner-side admission hook and the self-hosted runner's operating rules, isolated environment setup, direct-test inventory, and cache/fallback checks. Nested workflows are not active CI evidence.
 - For release or installed-app work, inspect the owning release/preparation scripts and maintainer policy before running a command; a plain build is not signed or installed proof.
 
 Root shortcuts are `bun run codexbar:check`, `bun run codexbar:test`, and `bun run codexbar:build`. OpenCodex isolated tests use the component's `bun run test` wrapper, not the root raw-test shortcut.

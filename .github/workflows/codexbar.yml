@@ -17,8 +17,12 @@ concurrency:
 
 jobs:
   macos:
-    runs-on: xcode-27
-    timeout-minutes: 90
+    # Courtesy skip for fork pull requests; not a security control (the
+    # fork-run approval policy is).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Self-hosted only: no GitHub-hosted runner carries these labels.
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    timeout-minutes: 220
     defaults:
       run:
         working-directory: apps/codexbar
@@ -26,15 +30,60 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: false
+      # The workspace persists between runs; keep only the build cache.
+      - name: Remove files left by earlier runs
+        working-directory: ${{ github.workspace }}
+        run: git clean -ffdx -e apps/codexbar/.build
       - name: Select Xcode 27
         run: |
           set -euo pipefail
-          sudo xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
-          echo "DEVELOPER_DIR=/Applications/Xcode_27.0.app/Contents/Developer" >> "$GITHUB_ENV"
-          xcodebuild -version
+          developer_dir=/Applications/Xcode.app/Contents/Developer
+          if [ ! -d "$developer_dir" ]; then
+            echo "::error::Xcode 27 is required at $developer_dir, but that directory does not exist."
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$developer_dir" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$developer_dir"
+          xcode_version="$(xcodebuild -version)"
+          echo "$xcode_version"
           swift --version
+          xcode_major="$(printf '%s\n' "$xcode_version" | awk 'NR == 1 && $1 == "Xcode" { split($2, v, "."); print v[1] }')"
+          if [ "$xcode_major" != "27" ]; then
+            echo "::error::Xcode 27 is required at $developer_dir, but found major version '${xcode_major:-unknown}'."
+            exit 1
+          fi
+      - name: Require build slot tool
+        run: |
+          set -euo pipefail
+          if ! command -v build-pipeline >/dev/null 2>&1; then
+            echo "::error::build-pipeline is not on PATH; the self-hosted runner must provide it."
+            exit 1
+          fi
+      - name: Wait for host load to settle
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          waited=0
+          while :; do
+            load="$(sysctl -n vm.loadavg | awk '{ print $2 }')"
+            if ! awk -v load="$load" 'BEGIN { exit !(load + 0 >= 30) }'; then
+              echo "1-minute load average is $load; continuing."
+              break
+            fi
+            if [ "$waited" -ge 1800 ]; then
+              echo "1-minute load average is still $load after 30 minutes; continuing anyway."
+              break
+            fi
+            echo "1-minute load average is $load (>= 30); waiting 30 seconds."
+            sleep 30
+            waited=$((waited + 30))
+          done
       - name: Check CodexBar
-        run: make check
+        timeout-minutes: 60
+        run: build-pipeline slot-exec --pool check --wait-max 1800 -- make check
       - name: Test complete CodexBar inventory
-        timeout-minutes: 75
-        run: ./Scripts/test.sh --direct-workers 2
+        timeout-minutes: 120
+        run: build-pipeline slot-exec --pool compile --wait-max 1800 -- ./Scripts/test.sh --direct-workers 2
