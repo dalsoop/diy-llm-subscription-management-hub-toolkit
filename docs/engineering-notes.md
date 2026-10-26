@@ -41,3 +41,11 @@ OpenCodex macOS tests are executables rather than XCTest bundles because the Com
 ## UI proof can exercise yesterday's binary
 
 A running menu bar process survives a rebuild and can make a correct source change appear absent. Package and explicitly relaunch the newly built bundle before capturing proof. Capture the screen before automation; a hidden menu extra or an off-screen coordinate is not a successful UI interaction. Parser/settings changes generally need focused tests, not a live provider or app relaunch.
+
+## A workflow condition does not keep forks off the self-hosted runner
+
+A fork pull request runs the workflow file from the fork's own head, so the `if:` and `runs-on` lines GitHub evaluates are whatever the fork wrote. The `macos` job's fork condition only turns an honest fork's run into a skip. The control is the job-started hook configured on the runner itself: GitHub's runner executes it before any step, from a path set in the runner's `.env`, and a non-zero exit fails the job. Removing the hook, or a `.env` that no longer names it, reopens the machine to fork code while the workflow still looks protected. After any runner maintenance, confirm the next run's "Set up runner" log contains `job-started-hook: admitted <event>`.
+
+## Runner configuration rewrites the job PATH and environment
+
+The runner's `config.sh` calls the vendor `env.sh`, which overwrites `.path` with the calling shell's `PATH` and appends variables such as `LANG` to `.env`. A re-registration over a non-login ssh shell therefore leaves jobs with a `PATH` that puts `/usr/bin` first (the system Python 3.9 instead of Homebrew's, and possibly no `build-pipeline`) and can drop the hook line from `.env`. Rewrite `.path` and `.env` after every `config.sh`, before the LaunchAgent starts, and set the credential files back to mode 600; the next run's "Require build slot tool" step and hook admit line confirm both.

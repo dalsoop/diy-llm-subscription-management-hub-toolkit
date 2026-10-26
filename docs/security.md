@@ -25,6 +25,7 @@ Trusted hub-management ingress is an explicitly configured listener/context. A f
 | Linked client | Read reduced hub state and submit the supported explicit switch request. | Claiming local cached accounts are switch authority or exporting full hub credentials. |
 | Background provider refresh | Noninteractive access allowed by its source and credential policy. | Opening a browser-cookie or Keychain consent prompt from background/settings work. |
 | Operating agent | Repository and runtime work within the person's instructions. | Auto-consenting to actions that spend the person's account identity, credits, or reputation. |
+| CI job on the self-hosted runner | Build and test this repository's own code for `push`, `workflow_dispatch`, and same-repository `pull_request` events, holding host build slots. | Running fork pull-request code; any `pull_request_target`, `issue_comment`, or `workflow_run` job on the runner; pushing to the repository; reading credentials beyond what the build and tests need. |
 
 ## Credential lifecycle
 
@@ -33,6 +34,16 @@ Generated management secrets use cryptographically random material and protected
 Provider OAuth lifetimes and remote revocation are provider-owned; there is no universal provider-token expiry or rotation interval. Use the account's reauthentication/removal flow rather than editing credentials into source files. Removing local material does not by itself prove a provider remotely revoked it. Session expiry and process-local session state are distinct from persistent admission-token lifetime; do not claim that rotating a file instantly revokes every established connection. Established WebSocket per-frame reauthentication/revocation is not a guaranteed capability.
 
 Cookie acquisition first finds host-matching rows, then accesses Safe Storage. One manual action allows at most one interactive Keychain read. Denials retain cooldowns, including manual retries; only an explicit cookie-refresh action with the prompt override can override that cooldown. Traversal stops at the first validated session. Tests never exercise live cookies, real account probes, or prompt-producing Keychain paths without an explicit request.
+
+## Self-hosted CI runner boundary
+
+CI jobs run on the team's Mac CI machine as its login account, the same trust as the team's other CI runner on that machine. Accepted on 2026-10-27: an admitted job can reach that account's GitHub CLI login with write access to all of the account's repositories, the other runner's configuration, the local state of apps installed for that account (including CodexBar, Claude, and OpenCodex state), and the runner's own `.env`, hook, and credential files. The build and `make check` use the real home directory; each test group gets a synthetic home and Keychain suppression from the test runner, so a change that weakens that isolation reaches real local state.
+
+Admission happens on the runner, not in the workflow. A job-started hook installed outside the runner application directory reads the event name and payload before any step and admits only `push`, `workflow_dispatch`, and `pull_request` whose head repository is this repository. Every other event, a fork pull request, a pull request without a head repository, and an unset, missing, unreadable, or invalid payload are refused (fail closed). A fork's pull request carries its own copy of the workflow file, so the workflow's fork condition is not a control. A fork's code reaches the machine only when the maintainer directly instructs, for that one pull request, that it be pushed into this repository. Weakening or bypassing the hook to get a run through is forbidden. An admitted job runs as the same account and could alter the installed hook or `.env`; the committed hook is the reference, and a SHA-256 comparison of the installed copy with it detects drift.
+
+Runner registration and removal tokens are short-lived and created on the CI machine at the moment of use, passed to the runner configuration only through the `ACTIONS_RUNNER_INPUT_TOKEN` environment variable, and never printed, logged, stored, or committed. The runner's credential files stay on the machine with owner-only permissions. Checkout does not persist the job token in the persistent workspace.
+
+GitHub prints the runner host's machine name and home-based work paths in every job log of this public repository; this cannot be hidden without renaming the machine and was accepted on 2026-10-27. The repository itself does not name the team's machines or accounts, and the hook prints only the event name and a fixed reason.
 
 ## Recording and diagnostic limits
 
