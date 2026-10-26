@@ -1,6 +1,6 @@
 # OpenCodex GUI — agent rules
 
-This file applies to `gui/` and inherits the repository-wide rules in `/AGENTS.md`.
+`gui/` owns dashboard presentation and management-API consumption, not proxy routing, credential admission, or Tauri lifecycle.
 
 ## Ownership and generated output
 

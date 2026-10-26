@@ -1,6 +1,6 @@
 # Rules for `structure/`
 
-This file applies to `structure/` and inherits the repository-wide rules in [`AGENTS.md`](../AGENTS.md).
+`structure/` owns the existing subsystem contract/source map and its validation metadata, not runtime implementation or public user workflows.
 [`INDEX.md`](INDEX.md) is the reading order and the source-to-doc map; it is generated from
 [`manifest.json`](manifest.json), so it is never the file you edit to record something.
 
@@ -12,8 +12,8 @@ subsystem. That is the whole job.
 - Public user workflows belong in `docs-site/`.
 - Open work, triage, and investigation belong in `devlog/`.
 - Superseded or alternative reasoning belongs in `decisions/`, not in the doc body.
-- Unreleased security findings belong in scratch space and nowhere in this repository. The rule in
-  the root [`AGENTS.md`](../AGENTS.md) binds this folder without exception.
+- Unreleased security findings, reproductions, draft advisories, and pre-disclosure plans belong in
+  ignored task-owned scratch space and nowhere in this repository, without maintainer exemptions.
 
 If you cannot write a sentence in the present tense about how the system behaves today, it is not a
 structure doc.

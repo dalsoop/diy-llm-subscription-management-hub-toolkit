@@ -1,6 +1,6 @@
 # Script and release-tooling instructions
 
-This file applies to `scripts/` and inherits the repository-wide rules in `/AGENTS.md`.
+`scripts/` owns test orchestration, package preparation, release and maintenance tooling. It does not own provider routing or grant authorization to publish.
 
 ## Safety boundary
 

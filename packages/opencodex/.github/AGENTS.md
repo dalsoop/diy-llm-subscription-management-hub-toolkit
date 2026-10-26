@@ -1,6 +1,6 @@
 # GitHub automation instructions
 
-This file applies to `.github/` and inherits the repository-wide rules in `/AGENTS.md`.
+This directory owns the component's reference automation. GitHub executes only the toolkit's root workflows; editing these references does not deploy or validate an active toolkit workflow.
 
 ## Security boundary
 
@@ -16,7 +16,7 @@ change requires explicit security review under `MAINTAINERS.md`.
 - Treat `pull_request_target`, workflow dispatch, reusable workflows, artifacts, caches, and generated command input as trust boundaries.
 - Do not broaden triggers, write permissions, token exposure, release eligibility, or publish capability without an explicit task requirement.
 - Preserve cross-platform coverage where the workflow currently promises Linux, macOS, and Windows behavior.
-- Keep branch-enforcement text synchronized with `AGENTS.md`, `MAINTAINERS.md`, and the public contributing guide.
+- Preserve the reviewed branch-enforcement policy across automation and contributor text; do not silently apply standalone `dev` policy as toolkit `main` policy.
 
 ## Validation
 

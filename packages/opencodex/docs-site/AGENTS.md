@@ -1,6 +1,6 @@
 # Documentation-site instructions
 
-This file applies to `docs-site/` and inherits the repository-wide rules in `/AGENTS.md`.
+`docs-site/` owns the public Astro/Starlight user documentation and translations. It does not own runtime configuration, generated site output, or private security triage.
 
 ## Source-of-truth rules
 

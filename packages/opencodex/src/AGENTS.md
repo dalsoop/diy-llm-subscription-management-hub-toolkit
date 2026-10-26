@@ -1,6 +1,6 @@
 # Source runtime instructions
 
-This file applies to `src/` and inherits the repository-wide rules in `/AGENTS.md`.
+`src/` owns CLI/runtime routing, adapters, account/configuration services, and management endpoints. It does not own generated dashboard assets, the desktop shell, or the separate CodexBar application.
 
 ## Runtime and module rules
 
@@ -8,7 +8,7 @@ This file applies to `src/` and inherits the repository-wide rules in `/AGENTS.m
 - Do not assume a separate server compilation step.
 - Prefer Bun and Web-platform APIs. Introduce a Node-only runtime dependency only when the task explicitly requires compatibility code and the owning module already has that role.
 - Preserve existing public exports and configuration compatibility unless the task explicitly changes them.
-- Read the applicable documents in `structure/` before changing shared routing, adapters, transports, sidecars, authentication, configuration, or server architecture. [`structure/INDEX.md`](../structure/INDEX.md) maps each source area to the docs that describe it — usually more than one, because those docs are organised by topic while `src/` is organised by module — and every doc listed for an area is updated in the same change that changes the area.
+- Read the applicable documents in `structure/` before changing shared routing, adapters, transports, sidecars, authentication, configuration, or server architecture. [`structure/INDEX.md`](../structure/INDEX.md) maps each source area to its documents, often more than one because documents follow topics while `src/` follows modules. Review every mapped document; update the authority when a shared contract changes and dependents when their own explanations change. Accurate unchanged prose need not be edited. Preserve the existing manifest, contract registry, invariant IDs, and approved crosslinks.
 
 ## Implementation rules
 
@@ -22,8 +22,8 @@ This file applies to `src/` and inherits the repository-wide rules in `/AGENTS.m
 ## Tests and validation
 
 - Place focused regression coverage near the existing tests for the affected subsystem.
-- For focused behavior, run the relevant `bun test tests/<name>.test.ts` and `bun run typecheck`.
-- If the change set is broader than one file, run `bun run test:changed` instead of the full suite.
-- Run `bun run test` only before marking a PR review-ready, or when the user explicitly asks for the full suite.
+- For focused behavior, use the component's isolated `bun run test tests/<domain>/<name>.test.ts` wrapper and `bun run typecheck`; raw test shortcuts do not provide the same synthetic-home setup.
+- For multi-file development feedback, use the isolated wrapper with a valid toolkit comparison, such as `bun run test --changed=origin/main` when available. The inherited `test:changed` shortcut still compares to `dev`. Import selection misses subprocess/source-as-data/golden dependencies; run those regression files explicitly.
+- Run the full `bun run test` suite before a non-trivial PR is review-ready by default. A proportional resource exception requires focused regressions, its reason, exact commands/results, and remaining CI coverage in the PR. Keep the PR in draft when focused coverage is unreliable; changed-file selection alone is not a readiness substitute.
 - For logging, requests, credentials, account data, or fixtures, also run `bun run privacy:scan`.
 - Update `docs-site/` when the change affects user-visible behavior or configuration.
