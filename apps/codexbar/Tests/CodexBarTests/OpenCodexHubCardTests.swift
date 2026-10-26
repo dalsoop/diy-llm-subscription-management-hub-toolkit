@@ -8,6 +8,75 @@ import Testing
 /// Mac that is not the hub.
 @MainActor
 struct OpenCodexHubCardTests {
+    @Test(arguments: [UsageProvider.codex, .claude, .grok])
+    func `hub account actions replace native login even before a snapshot arrives`(provider: UsageProvider) throws {
+        let (fixture, _, _) = try self.makeFixture()
+        defer { fixture.cleanup() }
+        fixture.settings.setOpenCodexHubEnabled(true, for: provider)
+        let descriptor = MenuDescriptor.build(
+            provider: provider,
+            store: fixture.store,
+            settings: fixture.settings,
+            account: AccountInfo(email: nil, plan: nil),
+            updateReady: false,
+            includeContextualActions: true)
+        let actions = descriptor.sections.flatMap(\.entries).compactMap { entry -> MenuDescriptor.MenuAction? in
+            if case let .action(_, action) = entry { return action }
+            return nil
+        }
+        #expect(actions.contains(.manageOpenCodexHubAccounts(provider)))
+        #expect(!actions.contains(.addCodexAccount))
+        #expect(!actions.contains(.switchAccount(provider)))
+    }
+
+    @Test
+    func `a switch expires even when its next snapshot read fails`() async throws {
+        let (fixture, executable, snapshotPath) = try self.makeFixture()
+        defer { fixture.store.clearOpenCodexHubCardState(.grok); fixture.cleanup() }
+        fixture.settings.grokOpenCodexHubEnabled = true
+        fixture.settings.grokOpenCodexHubExecutablePath = executable
+        fixture.settings.grokOpenCodexHubSnapshotPath = snapshotPath
+        await fixture.store.refreshOpenCodexHubCard(.grok, generation: nil)
+        var state = try #require(fixture.store.openCodexHubCardState(for: .grok))
+        let request = OpenCodexHubSwitchRequest(
+            provider: .xai,
+            targetIDSuffix: "ffff",
+            targetEmail: "b***b@example.invalid",
+            requestedAt: Date().addingTimeInterval(-OpenCodexHubPendingSwitch.expiryInterval - 1))
+        state.switchStatus.begin(request, label: "Private alias")
+        fixture.store.openCodexHubCardStates[.grok] = state
+        try "invalid snapshot".write(toFile: snapshotPath, atomically: true, encoding: .utf8)
+        await fixture.store.refreshOpenCodexHubCard(.grok, generation: nil)
+        let failed = try #require(fixture.store.openCodexHubCardState(for: .grok))
+        #expect(failed.lastError != nil)
+        #expect(!failed.switchStatus.isPending)
+        #expect(failed.switchStatus.notice == .expired)
+    }
+
+    @Test
+    func `switch success follows privacy changes in both directions`() {
+        var status = OpenCodexHubSwitchStatus()
+        status.finish(.switched("Private alias"))
+        #expect(status.menuLines(hidePersonalInfo: false) == [L("The hub switched to %@.", "Private alias")])
+        #expect(status.menuLines(hidePersonalInfo: true) == [L("The hub switched to %@.", L("Account"))])
+        #expect(status.menuLines(hidePersonalInfo: false) == [L("The hub switched to %@.", "Private alias")])
+    }
+
+    @Test
+    func `hub settings hide the native Codex account editor and route account addition to management`() async throws {
+        let (fixture, _, _) = try self.makeFixture()
+        defer { fixture.cleanup() }
+        fixture.settings.codexOpenCodexHubEnabled = true
+        var opened: [UsageProvider] = []
+        let pane = ProvidersPane(
+            settings: fixture.settings,
+            store: fixture.store,
+            runProviderLoginFlow: { opened.append($0) })
+        #expect(pane._test_codexAccountsSectionState() == nil)
+        await pane.addManagedCodexAccount()
+        #expect(opened == [.codex])
+    }
+
     /// The hub snapshot as just written (a switch is asked for only through a current snapshot).
     private static var snapshot: String {
         self.snapshotTemplate.replacingOccurrences(
@@ -279,7 +348,7 @@ struct OpenCodexHubCardTests {
             accountLabel: "b***b@example.invalid",
             details: [
                 L("Every Mac that uses this hub moves to this Claude account on its next request."),
-                L("Quota: %@", "5h 9% · Weekly 100% · Fable 76%"),
+                L("Quota: %@", "5h: 9% used · Weekly: 100% used · Fable: 76% used"),
                 nearLimit,
                 L("This Mac asks the hub to switch; the result shows after the hub's next update."),
                 nearLimit,

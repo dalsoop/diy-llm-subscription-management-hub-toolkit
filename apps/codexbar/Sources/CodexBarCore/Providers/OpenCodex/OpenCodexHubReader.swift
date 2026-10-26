@@ -162,12 +162,13 @@ public enum OpenCodexHubReader {
     public static func readLivePool(
         provider: OpenCodexHubProvider,
         binary: String,
+        refreshQuota: Bool = true,
         timeout: TimeInterval = OpenCodexHubReader.defaultTimeout) async throws -> OpenCodexHubLivePool
     {
         try Task.checkCancellation()
         let result = try await SubprocessRunner.run(
             binary: binary,
-            arguments: provider.listArguments,
+            arguments: refreshQuota ? provider.listArguments : provider.readOnlyListArguments,
             environment: self.environment(for: binary),
             timeout: timeout,
             acceptsNonZeroExit: true,
@@ -256,20 +257,9 @@ public enum OpenCodexHubReader {
         let role = await roleCache.role(forBinary: binary, now: now)
         try Task.checkCancellation()
         if role.ownsAccounts, let binary {
-            do {
-                let live = try await self.readLivePool(provider: provider, binary: binary, timeout: timeout)
-                return .hub(live, binary: binary)
-            } catch let error as OpenCodexHubPoolError {
-                throw error
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                // The hub's own list failed: a request through its snapshot still reaches it.
-                guard let snapshotPath else { throw error }
-                let snapshot = try self.readSnapshot(provider: provider, path: snapshotPath)
-                let directory = OpenCodexHubSwitchRequestWriter.requestsDirectory(forSnapshotPath: snapshotPath)
-                return .request(snapshot, requestsDirectory: directory)
-            }
+            // The collector only reads client requests; a request in the hub's own folder has no consumer.
+            let live = try await self.readLivePool(provider: provider, binary: binary, timeout: timeout)
+            return .hub(live, binary: binary)
         }
         guard let snapshotPath,
               let snapshot = try self.readSnapshotIfPresent(provider: provider, path: snapshotPath)
@@ -380,10 +370,11 @@ public enum OpenCodexHubReader {
             return .snapshot(snapshot)
         }
         do {
-            let live = try await self.readLivePool(provider: provider, binary: binary, timeout: timeout)
+            let live = try await self.readLivePool(
+                provider: provider, binary: binary, refreshQuota: false, timeout: timeout)
             return .linkedCopy(OpenCodexHubPool(
                 provider: provider,
-                accounts: live.pool.accounts,
+                accounts: self.retainingSnapshotQuota(live.pool.accounts, snapshot: snapshot?.pool),
                 switchable: false,
                 origin: .linkedCopy(hubName: snapshot?.pool.hubName),
                 lastRequests: snapshot?.pool.lastRequests ?? []))
@@ -392,6 +383,49 @@ public enum OpenCodexHubReader {
         } catch {
             if let snapshot { return .snapshot(snapshot) }
             throw error
+        }
+    }
+
+    private struct CachedAccountKey: Hashable {
+        let suffix: String?
+        let email: String
+
+        init(_ account: OpenCodexHubAccount) {
+            self.suffix = account.idSuffix
+            self.email = account.email
+        }
+    }
+
+    /// Passive lists omit quota. Retain uniquely matched, dated observations without inventing freshness.
+    private static func retainingSnapshotQuota(
+        _ accounts: [OpenCodexHubAccount], snapshot: OpenCodexHubPool?) -> [OpenCodexHubAccount]
+    {
+        guard let snapshot else { return accounts }
+        let cached = Dictionary(grouping: snapshot.accounts, by: CachedAccountKey.init)
+        let current = Dictionary(grouping: accounts, by: CachedAccountKey.init)
+        return accounts.map { account in
+            let key = CachedAccountKey(account)
+            guard account.quota.isEmpty, key.suffix != nil, !key.email.isEmpty,
+                  current[key]?.count == 1, let matches = cached[key], matches.count == 1,
+                  let previous = matches.first, !previous.quota.isEmpty,
+                  let capturedAt = previous.quota.updatedAt ?? snapshot.snapshotUpdatedAt
+            else { return account }
+            let quota = previous.quota
+            return OpenCodexHubAccount(
+                idSuffix: account.idSuffix,
+                label: account.label,
+                email: account.email,
+                isActive: account.isActive,
+                isPaused: account.isPaused,
+                needsReauth: account.needsReauth,
+                health: account.health,
+                quotaUnavailable: true,
+                quota: OpenCodexHubQuota(
+                    fiveHour: quota.fiveHour,
+                    weekly: quota.weekly,
+                    monthly: quota.monthly,
+                    custom: quota.custom,
+                    updatedAt: capturedAt))
         }
     }
 

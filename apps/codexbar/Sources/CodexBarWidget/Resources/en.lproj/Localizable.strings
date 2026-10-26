@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API est. · not billed";
 "%@ cost" = "%@ cost";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ is unavailable. Edit the widget to choose a provider.";
 "%@ left" = "%@ left";
 "%@ tokens" = "%@ tokens";
 "%@ used" = "%@ used";
 "%@, selected" = "%@, selected";
 "%@-day limit" = "%@-day limit";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "%@-hour limit";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@-minute limit";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@D";
 "%@H" = "%@H";
@@ -75,6 +79,7 @@
 "Daily usage" = "Daily usage";
 "Deployment" = "Deployment";
 "Edit predictions" = "Edit predictions";
+"Enable a provider in CodexBar → Settings → Providers." = "Enable a provider in CodexBar → Settings → Providers.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account.";
 "Extra usage" = "Extra usage";
 "Extra usage balance" = "Extra usage balance";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Monthly budget";
 "Monthly credits" = "Monthly credits";
 "Monthly quota" = "Monthly quota";
+"Monthly usage" = "Monthly usage";
 "No data" = "No data";
 "Not reported by %@" = "Not reported by %@";
 "On-demand" = "On-demand";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Two quota burn-down charts in one tile.";
 "Unavailable account" = "Unavailable account";
 "Usage" = "Usage";
-"Usage data appears after a refresh." = "Usage data appears after a refresh.";
-"Usage data will appear once the app refreshes." = "Usage data will appear once the app refreshes.";
 "Usage history chart with recent totals." = "Usage history chart with recent totals.";
-"Usage history will appear after a refresh." = "Usage history will appear after a refresh.";
 "Usage limit" = "Usage limit";
 "Usage limits and reset countdowns for one saved account." = "Usage limits and reset countdowns for one saved account.";
 "Usage widget with a provider switcher." = "Usage widget with a provider switcher.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Weekly Window";
 "Weekly quota" = "Weekly quota";
 "Weekly tokens" = "Weekly tokens";
+"Weekly usage" = "Weekly usage";
 "Window" = "Window";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "after reset";

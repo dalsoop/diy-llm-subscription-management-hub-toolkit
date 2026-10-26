@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API 見積り · 請求されません";
 "%@ cost" = "%@のコスト";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ は利用できません。ウィジェットを編集してプロバイダーを選択してください。";
 "%@ left" = "残り %@";
 "%@ tokens" = "%@ トークン";
 "%@ used" = "%@ 使用済み";
 "%@, selected" = "%@、選択済み";
 "%@-day limit" = "%@ 日の制限";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "%@ 時間制限";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@ 分の制限";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@日";
 "%@H" = "%@時間";
@@ -75,6 +79,7 @@
 "Daily usage" = "毎日の使用量";
 "Deployment" = "デプロイメント";
 "Edit predictions" = "予測の編集";
+"Enable a provider in CodexBar → Settings → Providers." = "CodexBar → 設定 → プロバイダーでプロバイダーを有効にしてください。";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "CodexBar → 設定 → メニュー → ウィジェットでアカウント ウィジェットを有効にします。次に、このウィジェットを編集してアカウントを選択します。";
 "Extra usage" = "追加使用量";
 "Extra usage balance" = "追加使用残高";
@@ -97,6 +102,7 @@
 "Monthly budget" = "月々の予算";
 "Monthly credits" = "月刊 クレジット";
 "Monthly quota" = "月刊 クォータ";
+"Monthly usage" = "Monthly usage";
 "No data" = "データなし";
 "Not reported by %@" = "%@ では報告されていません";
 "On-demand" = "オンデマンドでの使用";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "1 つのタイルに 2 つの クォータ バーンダウン チャート。";
 "Unavailable account" = "アカウント: 利用不可";
 "Usage" = "使用量";
-"Usage data appears after a refresh." = "使用状況データは更新後に表示されます。";
-"Usage data will appear once the app refreshes." = "アプリが更新されると、使用状況データが表示されます。";
 "Usage history chart with recent totals." = "最近の合計を含む使用履歴グラフ。";
-"Usage history will appear after a refresh." = "更新後に使用履歴が表示されます。";
 "Usage limit" = "利用制限";
 "Usage limits and reset countdowns for one saved account." = "保存された 1 つのアカウントの使用制限とカウントダウンのリセット。";
 "Usage widget with a provider switcher." = "プロバイダースイッチャーを使用した使用状況ウィジェット。";
@@ -178,6 +181,7 @@
 "Weekly Window" = "毎週のウィンドウ";
 "Weekly quota" = "週刊 クォータ";
 "Weekly tokens" = "週刊 トークン";
+"Weekly usage" = "週間使用量";
 "Window" = "利用窓口";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "リセット後";

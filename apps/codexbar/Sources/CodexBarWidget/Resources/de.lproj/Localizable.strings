@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API geschätzt · nicht in Rechnung gestellt";
 "%@ cost" = "%@ Kosten";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ ist nicht verfügbar. Bearbeite das Widget, um einen Anbieter auszuwählen.";
 "%@ left" = "%@ übrig";
 "%@ tokens" = "%@ Token";
 "%@ used" = "%@ verbraucht";
 "%@, selected" = "%@, ausgewählt";
 "%@-day limit" = "%@-Tageslimit";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "%@-Stundenlimit";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "%@-Minutenlimit";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@T";
 "%@H" = "%@Std";
@@ -75,6 +79,7 @@
 "Daily usage" = "Täglicher Gebrauch";
 "Deployment" = "Einsatz";
 "Edit predictions" = "Vorhersagen bearbeiten";
+"Enable a provider in CodexBar → Settings → Providers." = "Aktiviere einen Anbieter in CodexBar → Einstellungen → Anbieter.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Aktivieren Sie Konto-Widgets unter CodexBar → Einstellungen → Menü → Widgets. Bearbeiten Sie dann dieses Widget, um ein Konto auszuwählen.";
 "Extra usage" = "Zusätzliche Nutzung";
 "Extra usage balance" = "Zusätzliches Nutzungsguthaben";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Monatsbudget";
 "Monthly credits" = "Monatlich Credits";
 "Monthly quota" = "Monatlich Kontingent";
+"Monthly usage" = "Monthly usage";
 "No data" = "Keine Daten";
 "Not reported by %@" = "Nicht gemeldet von %@";
 "On-demand" = "On-Demand-Nutzung";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Zwei Kontingent-Burndown-Diagramme in einer Kachel.";
 "Unavailable account" = "Konto: Nicht verfügbar";
 "Usage" = "Verwendung";
-"Usage data appears after a refresh." = "Nutzungsdaten werden nach einer Aktualisierung angezeigt.";
-"Usage data will appear once the app refreshes." = "Nutzungsdaten werden angezeigt, sobald die App aktualisiert wird.";
 "Usage history chart with recent totals." = "Nutzungsverlaufsdiagramm mit aktuellen Gesamtwerten.";
-"Usage history will appear after a refresh." = "Der Nutzungsverlauf wird nach einer Aktualisierung angezeigt.";
 "Usage limit" = "Nutzungsbeschränkung";
 "Usage limits and reset countdowns for one saved account." = "Nutzungsbeschränkungen und Reset-Countdowns für ein gespeichertes Konto.";
 "Usage widget with a provider switcher." = "Nutzungs-Widget mit Anbieterwechsel.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Wöchentliches Fenster";
 "Weekly quota" = "Wöchentlich Kontingent";
 "Weekly tokens" = "Wöchentlich Token";
+"Weekly usage" = "Wöchentliche Nutzung";
 "Window" = "Nutzungsfenster";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "nach dem Zurücksetzen";

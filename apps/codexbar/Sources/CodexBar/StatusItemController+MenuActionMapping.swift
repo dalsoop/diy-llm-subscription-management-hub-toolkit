@@ -17,8 +17,8 @@ extension StatusItemController {
         case let .switchAccount(provider): (#selector(self.runSwitchAccount(_:)), provider.rawValue)
         case let .openTerminal(command): (#selector(self.openTerminalCommand(_:)), command)
         case let .loginToProvider(url): (#selector(self.openLoginToProvider(_:)), url)
-        case .openCodexWorkspaces, .openOpenAILiveUsage:
-            self.windowMenuAction(for: action)
+        case .openCodexWorkspaces, .openOpenAILiveUsage, .manageOpenCodexHubAccounts:
+            self.secondaryMenuAction(for: action)
         case .settings: (#selector(self.showSettingsGeneral), nil)
         case let .providerSettings(provider): (#selector(self.showProviderSettings(_:)), provider.rawValue)
         case .about: (#selector(self.showSettingsAbout), nil)
@@ -29,14 +29,16 @@ extension StatusItemController {
         }
     }
 
-    func windowMenuAction(for action: MenuDescriptor.MenuAction) -> (Selector, String) {
+    func secondaryMenuAction(for action: MenuDescriptor.MenuAction) -> (Selector, String) {
         switch action {
+        case let .manageOpenCodexHubAccounts(provider):
+            (#selector(self.manageOpenCodexHubAccountsFromMenu(_:)), provider.rawValue)
         case .openCodexWorkspaces:
             (#selector(self.openCodexWorkspaces(_:)), CodexWorkspacesWindowIdentity.menuItem)
         case .openOpenAILiveUsage:
             (#selector(self.openOpenAILiveUsage(_:)), OpenAILiveUsageWindowIdentity.menuItem)
         default:
-            preconditionFailure("Expected a window menu action")
+            preconditionFailure("Expected a secondary menu action")
         }
     }
 

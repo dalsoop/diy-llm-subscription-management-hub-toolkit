@@ -15,6 +15,17 @@ final class OpenCodexHubMenuSelection: NSObject {
 }
 
 extension StatusItemController {
+    @objc func manageOpenCodexHubAccountsFromMenu(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let provider = UsageProvider(rawValue: raw) else { return }
+        Task { @MainActor [weak self] in await self?.openOpenCodexHubManagement(provider) }
+    }
+
+    func openOpenCodexHubManagement(_ provider: UsageProvider) async {
+        if let message = await self.store.openHubAccountManagement(provider, openURL: { NSWorkspace.shared.open($0) }) {
+            self.presentLoginAlert(title: L("Add account or sign in again..."), message: message)
+        }
+    }
+
     /// Adds the hub rows when the card reads an opencodex hub pool.
     func addOpenCodexHubMenuItemsIfNeeded(provider: UsageProvider, to menu: NSMenu, width: CGFloat) {
         guard self.store.usesOpenCodexHub(for: provider) else { return }
@@ -24,6 +35,9 @@ extension StatusItemController {
     /// Notices and the account switcher of a Codex or Grok card that reads an opencodex hub pool. The
     /// active account's quota renders as the provider card below these rows.
     func addOpenCodexHubMenuItems(provider: UsageProvider, to menu: NSMenu, width: CGFloat) {
+        if let state = self.store.openCodexHubManagementState(for: provider) {
+            self.addOpenCodexHubNotice(state.menuMessage, to: menu, width: width)
+        }
         guard let state = self.store.openCodexHubCardState(for: provider) else {
             self.addOpenCodexHubNotice(L("Reading the opencodex hub…"), to: menu, width: width)
             return

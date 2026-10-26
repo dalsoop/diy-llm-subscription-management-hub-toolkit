@@ -91,6 +91,20 @@ case "$LOWER_CONF" in
     exit 1
     ;;
 esac
+LOCAL_PREVIEW="${CODEXBAR_LOCAL_PREVIEW:-0}"
+case "$LOCAL_PREVIEW" in
+  0) ;;
+  1)
+    if [[ "$LOWER_CONF" != "debug" || -z "${CODEXBAR_BUNDLE_ID:-}" || "$CODEXBAR_BUNDLE_ID" == "com.steipete.codexbar" ]]; then
+      echo "ERROR: CODEXBAR_LOCAL_PREVIEW requires debug and an explicit redistributor bundle ID." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "ERROR: CODEXBAR_LOCAL_PREVIEW must be 0 or 1." >&2
+    exit 1
+    ;;
+esac
 
 # Load version info
 source "$ROOT/version.env"
@@ -288,11 +302,19 @@ SPARKLE_PUBLIC_KEY="${CODEXBAR_SPARKLE_PUBLIC_KEY:-AGCY8w5vHirVfGGDGc8Szc5iuOqup
 DEFAULT_OPENCODEX_HUB_SNAPSHOT_PATH='~/.swift-app-state/opencodex-hub-accounts.json'
 OPENCODEX_HUB_SNAPSHOT_PATH="${CODEXBAR_OPENCODEX_HUB_SNAPSHOT_PATH-$DEFAULT_OPENCODEX_HUB_SNAPSHOT_PATH}"
 OPENCODEX_HUB_NAME="${CODEXBAR_OPENCODEX_HUB_NAME-m5m1}"
+# Supply the current hub's browser origin when packaging fleet builds; never derive it from a data tunnel.
+OPENCODEX_HUB_MANAGEMENT_ORIGIN="${CODEXBAR_OPENCODEX_HUB_MANAGEMENT_ORIGIN-}"
 APP_GROUP_BASE="com.steipete.codexbar"
 AUTO_CHECKS=true
+BUILD_CONFIGURATION="$LOWER_CONF"
 if [[ "$LOWER_CONF" == "debug" ]]; then
-  BUNDLE_ID="${BUNDLE_ID}.debug"
-  APP_GROUP_BASE="${APP_GROUP_BASE}.debug"
+  if [[ "${LOCAL_PREVIEW:-0}" == "1" ]]; then
+    # A local replacement keeps the installed fork's settings and app-group identity.
+    BUILD_CONFIGURATION="local-debug-preview"
+  else
+    BUNDLE_ID="${BUNDLE_ID}.debug"
+    APP_GROUP_BASE="${APP_GROUP_BASE}.debug"
+  fi
   FEED_URL=""
   AUTO_CHECKS=false
 fi
@@ -394,9 +416,11 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>SUEnableAutomaticChecks</key><${AUTO_CHECKS}/>
     <key>CodexBuildTimestamp</key><string>${BUILD_TIMESTAMP}</string>
     <key>CodexGitCommit</key><string>${GIT_COMMIT}</string>
+    <key>CodexBuildConfiguration</key><string>${BUILD_CONFIGURATION}</string>
     <key>CodexBarTeamID</key><string>${APP_TEAM_ID}</string>
     <key>CodexBarOpenCodexHubSnapshotPath</key><string>${OPENCODEX_HUB_SNAPSHOT_PATH}</string>
     <key>CodexBarOpenCodexHubName</key><string>${OPENCODEX_HUB_NAME}</string>
+    <key>CodexBarOpenCodexHubManagementOrigin</key><string>${OPENCODEX_HUB_MANAGEMENT_ORIGIN}</string>
     <key>UTExportedTypeDeclarations</key>
     <array>
         <dict>

@@ -51,13 +51,7 @@ enum OpenCodexHubSettingsDescriptors {
     private static func statusText(provider: UsageProvider, store: UsageStore) -> String? {
         guard let state = store.openCodexHubCardState(for: provider) else { return nil }
         if let error = state.lastError { return error }
-        guard let pool = state.pool, let refreshedAt = state.lastRefreshAt else { return nil }
-        let accounts = pool.accounts.count == 1 ? "1 account" : "\(pool.accounts.count) accounts"
-        var parts = ["\(accounts), updated \(refreshedAt.relativeDescription())"]
-        if !pool.isHubLocal {
-            let hub = pool.hubName ?? OpenCodexHubDefaults.hubName ?? "the hub"
-            parts.append(pool.switchable ? "copy from \(hub), switches by request" : "read-only copy from \(hub)")
-        }
-        return parts.joined(separator: " — ")
+        guard let pool = state.pool else { return nil }
+        return OpenCodexHubPresentation.listStatus(pool)
     }
 }

@@ -4,6 +4,32 @@ import Testing
 
 /// The opencodex runtime role (`ocx status --json`), its cache, and the sources each role reads.
 struct OpenCodexRuntimeRoleTests {
+    @Test
+    func `a failed hub list never writes an unconsumed local switch request`() async throws {
+        let directory = try self.makeDirectory()
+        let ocx = directory.appendingPathComponent("failing-ocx")
+        try """
+        #!/bin/sh
+        case "$1 $2" in
+          "status --json") echo '{"runtimeRole":"hub"}' ;;
+          *) echo 'list unavailable' >&2; exit 1 ;;
+        esac
+        """.write(to: ocx, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: ocx.path)
+        let snapshot = directory.appendingPathComponent("snapshot.json")
+        try OpenCodexHubLinkChildTests.snapshot(updatedAt: Date()).write(
+            to: snapshot,
+            atomically: true,
+            encoding: .utf8)
+        await #expect(throws: OpenCodexHubReaderError.self) {
+            _ = try await OpenCodexHubReader.switchAccount(
+                provider: .xai, idSuffix: "9999", email: "b***b@example.com",
+                executablePath: ocx.path, snapshotPath: snapshot.path, roleCache: OpenCodexRuntimeRoleCache())
+        }
+        #expect(!FileManager.default
+            .fileExists(atPath: directory.appendingPathComponent("opencodex-hub-requests").path))
+    }
+
     // MARK: Status document
 
     @Test(arguments: [

@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "Ước tính %@ API · chưa được lập hóa đơn";
 "%@ cost" = "giá %@";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ không khả dụng. Chỉnh sửa widget để chọn một nhà cung cấp.";
 "%@ left" = "còn lại %@";
 "%@ tokens" = "%@ mã thông báo";
 "%@ used" = "%@ đã dùng";
 "%@, selected" = "%@, đã chọn";
 "%@-day limit" = "Giới hạn ngày %@";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "Giới hạn giờ %@";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "Giới hạn phút %@";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@ngày";
 "%@H" = "%@giờ";
@@ -75,6 +79,7 @@
 "Daily usage" = "sử dụng hàng ngày";
 "Deployment" = "Triển khai";
 "Edit predictions" = "Chỉnh sửa dự đoán";
+"Enable a provider in CodexBar → Settings → Providers." = "Bật một nhà cung cấp trong CodexBar → Cài đặt → Nhà cung cấp.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Kích hoạt tiện ích tài khoản trong CodexBar → Cài đặt → Menu → Tiện ích. Sau đó chỉnh sửa tiện ích này để chọn tài khoản.";
 "Extra usage" = "Thêm Mức sử dụng";
 "Extra usage balance" = "Số dư sử dụng thêm";
@@ -97,6 +102,7 @@
 "Monthly budget" = "Ngân sách hàng tháng";
 "Monthly credits" = "Tín dụng hàng tháng";
 "Monthly quota" = "Hạn mức hàng tháng";
+"Monthly usage" = "Monthly usage";
 "No data" = "Không có dữ liệu";
 "Not reported by %@" = "Không được báo cáo bởi %@";
 "On-demand" = "Sử dụng theo yêu cầu";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "Hai biểu đồ ghi lại Hạn mức trong một ô.";
 "Unavailable account" = "Tài khoản: Không có sẵn";
 "Usage" = "Mức sử dụng";
-"Usage data appears after a refresh." = "Dữ liệu sử dụng xuất hiện sau khi làm mới.";
-"Usage data will appear once the app refreshes." = "Dữ liệu sử dụng sẽ xuất hiện sau khi ứng dụng được làm mới.";
 "Usage history chart with recent totals." = "Biểu đồ lịch sử sử dụng với tổng số gần đây.";
-"Usage history will appear after a refresh." = "Lịch sử sử dụng sẽ xuất hiện sau khi làm mới.";
 "Usage limit" = "Giới hạn sử dụng";
 "Usage limits and reset countdowns for one saved account." = "Giới hạn sử dụng và đặt lại đếm ngược cho một tài khoản đã lưu.";
 "Usage widget with a provider switcher." = "Tiện ích sử dụng với trình chuyển đổi nhà cung cấp.";
@@ -178,6 +181,7 @@
 "Weekly Window" = "Cửa sổ hàng tuần";
 "Weekly quota" = "Hạn mức hàng tuần";
 "Weekly tokens" = "mã thông báo hàng tuần";
+"Weekly usage" = "Hàng tuần Mức sử dụng";
 "Window" = "Cửa sổ sử dụng";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "sau khi thiết lập lại";

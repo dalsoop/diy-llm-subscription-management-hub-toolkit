@@ -120,7 +120,7 @@ extension StatusItemController {
                     accounts: accounts,
                     idPrefix: "openCodexHub",
                     cardModel: { [weak self] account in
-                        self?.openCodexHubCardModel(for: account, provider: provider)
+                        self?.openCodexHubCardModel(for: account, pool: pool, provider: provider)
                     },
                     planAction: { [weak self] account in
                         self?.openCodexHubSwitchAction(account, pool: pool, provider: provider, menu: captureMenu)
@@ -133,7 +133,8 @@ extension StatusItemController {
         }
         let cardRows = accounts.compactMap { account ->
             (account: ProviderAccountUsageSnapshot, model: UsageMenuCardView.Model)? in
-            guard let model = self.openCodexHubCardModel(for: account, provider: provider) else { return nil }
+            guard let model = self.openCodexHubCardModel(for: account, pool: pool, provider: provider)
+            else { return nil }
             return (account, model)
         }
         self.addStackedMenuCards(
@@ -193,9 +194,14 @@ extension StatusItemController {
 
     private func openCodexHubCardModel(
         for account: ProviderAccountUsageSnapshot,
+        pool: OpenCodexHubPool,
         provider: UsageProvider) -> UsageMenuCardView.Model?
     {
-        let actionLabel: String? = if account.isActive {
+        let needsReauth = OpenCodexHubAccountProjection.hubAccount(for: account, in: pool)?
+            .requiresReauthentication == true
+        let actionLabel: String? = if needsReauth {
+            L("Re-authenticate")
+        } else if account.isActive {
             L("Active")
         } else if account.canActivate {
             L("Switch Account...")
@@ -220,6 +226,12 @@ extension StatusItemController {
         provider: UsageProvider,
         menu: NSMenu) -> (() -> Void)?
     {
+        if OpenCodexHubAccountProjection.hubAccount(for: account, in: pool)?.requiresReauthentication == true {
+            return { [weak self, weak menu] in
+                menu?.cancelTracking()
+                Task { @MainActor [weak self] in await self?.openOpenCodexHubManagement(provider) }
+            }
+        }
         guard account.canActivate, let hubAccount = OpenCodexHubAccountProjection.hubAccount(for: account, in: pool)
         else { return nil }
         let label = ClaudeSwapAccountMenuDisplay.label(for: account, hidePersonalInfo: self.settings.hidePersonalInfo)

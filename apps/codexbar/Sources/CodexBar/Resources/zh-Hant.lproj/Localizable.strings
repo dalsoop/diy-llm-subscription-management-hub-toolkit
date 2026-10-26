@@ -171,7 +171,7 @@
 "Local token history is unavailable or incomplete." = "本機 Token 歷史無法使用或不完整。";
 "Could not add Codex account" = "無法新增 Codex 帳號";
 "Could not open Terminal for Gemini" = "無法為 Gemini 開啟終端";
-"Could not start claude /login" = "無法啟動 claude /login";
+"Claude OAuth credentials read failed: CodexBar's Claude OAuth cache is temporarily unavailable in macOS Keychain. Check that the login keychain is unlocked in Keychain Access, then retry Refresh." = "無法讀取 Claude OAuth 憑證：CodexBar 的 Claude OAuth 快取在 macOS 鑰匙圈中暫時無法使用。請在「鑰匙圈存取」中確認登入鑰匙圈已解鎖，然後重新整理。";
 "Could not start codex login" = "無法啟動 codex login";
 "Could not switch system account" = "無法切換系統帳號";
 "Credits" = "額度";
@@ -620,7 +620,6 @@
 "automatic" = "自動";
 "primary_api_key_limit" = "主要（API 金鑰限制）";
 "menu_bar_style_title" = "選單列樣式";
-"menu_bar_style_subtitle" = "選單列項目的繪製方式。";
 "menu_bar_inactive_display_contrast_title" = "改善非使用中顯示器上的可見度";
 "menu_bar_inactive_display_contrast_subtitle" = "使用高對比顯示，讓其他顯示器上的圖示與指標保持清晰可讀。";
 "menu_bar_style_critters" = "小動物";
@@ -1089,6 +1088,7 @@
 "Password" = "密碼";
 "%@ authentication is disabled." = "%@ 認證已停用。";
 "%@ cookies are disabled." = "%@ Cookie 已停用。";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ 無法使用。編輯小工具以選擇供應商。";
 "%@ web API access is disabled." = "%@ Web API 存取已停用。";
 "Disable %@ dashboard cookie usage." = "停用 %@ 儀表板 Cookie。";
 "Keychain access is disabled in Advanced, so browser cookie import is unavailable." = "進階設定中已停用鑰匙圈存取，因此無法匯入瀏覽器 Cookie。";
@@ -1154,7 +1154,6 @@
 "Windsurf session JSON bundle" = "Windsurf 工作階段 JSON 組合";
 "Workspace ID" = "工作區 ID";
 "Your StepFun platform password. Used to login and obtain a session token." = "你的 StepFun 平台密碼。用於登入並取得工作階段 token。";
-"claude /login exited with status %d." = "claude /login 以狀態 %d 結束。";
 "codex login exited with status %d." = "codex login 以狀態 %d 結束。";
 "Cookie: …\n\nor paste a cURL capture from the Abacus AI dashboard" = "Cookie: …\n\n或貼上 Abacus AI 儀表板的 cURL 擷取內容";
 "Cookie: …\n\nor paste the __Secure-next-auth.session-token value" = "Cookie: …\n\n或貼上 __Secure-next-auth.session-token 值";
@@ -1441,6 +1440,7 @@
 /* Menu bar layout editor */
 "menu_bar_layout_title" = "佈局";
 "menu_bar_layout_footer" = "拖曳項目以排列選單列。點按項目可附加；選取已放置的項目並按 Delete 鍵可將其移除。";
+"menu_bar_layout_footer_requires_icon_and_percent" = "佈局僅適用於「%@」選單列樣式。請在上方選擇該樣式以進行編輯。";
 "menu_bar_layout_group_identity" = "身分";
 "menu_bar_layout_group_usage" = "使用量";
 "menu_bar_layout_group_time" = "時間";
@@ -1818,6 +1818,7 @@
 "Details for %@" = "%@ 的詳細信息";
 "EST. %@" = "預計 %@";
 "Enable Antigravity provider" = "啟用 Antigravity 提供程序";
+"Enable a provider in CodexBar → Settings → Providers." = "在 CodexBar → 設定 → 供應商中啟用一個供應商。";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "在 CodexBar → 設定 → 選單 → 小工具中啟用帳號小工具。然後編輯此小部件以選擇帳戶。";
 "Error: %@" = "錯誤：%@";
 "Examples: alt+cmd+2, shift+right. Refresh (cmd+r), Settings (cmd+,) and Quit (cmd+q) are reserved." = "例：alt+cmd+2、shift+right。刷新（cmd+r）、設定（cmd+,）和退出（cmd+q）被保留。";
@@ -2000,10 +2001,7 @@
 "Top models:" = "最常用模型：";
 "Two quota burn-down charts in one tile." = "一張圖塊中包含兩個 配額 燃盡圖。";
 "Usage & spend come from your console.groq.com browser session automatically. An API key is optional and only adds Enterprise Prometheus metrics." = "使用情況和支出自動來自您的 console.groq.com 瀏覽器會話。 API 金鑰是可選的，僅添加 Enterprise Prometheus 指標。";
-"Usage data appears after a refresh." = "刷新後會顯示使用情況資料。";
-"Usage data will appear once the app refreshes." = "應用程式刷新後，將顯示使用資料。";
 "Usage history chart with recent totals." = "使用歷史記錄圖表以及最近的總計。";
-"Usage history will appear after a refresh." = "刷新後會出現使用歷史記錄。";
 "Usage limit" = "使用限制";
 "Usage limits and reset countdowns for one saved account." = "一個已儲存帳戶的使用限制和重設倒數。";
 "Usage widget with a provider switcher." = "可切換提供商的用量小工具。";
@@ -2097,6 +2095,8 @@
 "Poe usage history is unavailable." = "Poe 使用歷史記錄不可用。";
 "Stored in ~/.codexbar/config.json. Get your key from poe.com/api/keys." = "儲存在~/.codexbar/config.json中。從 poe.com/api/keys 取得金鑰。";
 "Billing" = "計費";
+"Invoice billing" = "帳單付款";
+"Prepaid" = "預付";
 "Rate limit" = "速率限制";
 "Billing and rate-limit data from the v0 Platform API" = "來自 v0 平台 API 的計費和速率限制數據";
 "v0 cost history is not available via the Platform API." = "v0 成本歷史記錄無法透過平台 API 取得。";
@@ -2444,7 +2444,7 @@
 "spend_performance_cache_help" = "將符合條件的輪次中已快取的輸入除以總輸入量。依輸入 token 數加權，並顯示樣本涵蓋範圍。";
 "spend_performance_metric_help" = "關於這些觀測值";
 "merged_icon_source_title" = "合併圖示來源";
-"merged_icon_source_subtitle" = "選擇摺疊後的合併圖示顯示哪個服務提供者。";
+"merged_icon_source_subtitle" = "「最高用量」僅比較配額。對於沒有配額的服務提供者，請使用「目前選取」。";
 "merged_icon_source_current_selection" = "目前選取";
 "merged_icon_source_highest_usage" = "最高用量";
 "merged_icon_source_frontmost_app" = "最前景的服務提供者 App";
@@ -2720,6 +2720,137 @@
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "從 opencodex 中樞而不是此供應商自己的來源顯示其帳號與限額。在中樞上，CodexBar 透過 `ocx` 切換帳號；其他 Mac 讀取中樞的快照檔並請求中樞切換。憑證保留在中樞上；CodexBar 從不讀取。";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "顯示 opencodex 中樞的 Claude 帳號。在中樞上，CodexBar 透過 `ocx` 切換帳號池的使用中帳號；其他 Mac 讀取中樞的快照檔並請求中樞切換。憑證保留在中樞上；CodexBar 從不讀取。";
 
+/* Opencodex local access and dashboard */
+"opencodex_access_title" = "API keys";
+"opencodex_access_refresh" = "Refresh";
+"opencodex_access_dashboard" = "Open dashboard";
+"opencodex_access_mutating" = "Changing a key… You can leave this pane while it completes.";
+"opencodex_access_refresh_failed" = "Refresh failed. Displayed keys cannot be changed until a successful refresh.";
+"opencodex_access_loading" = "Loading keys…";
+"opencodex_access_name" = "Key name";
+"opencodex_access_create" = "Create key";
+"opencodex_access_empty" = "No API keys.";
+"opencodex_access_usage_incomplete" = "Usage records are incomplete.";
+"opencodex_access_history_truncated" = "Earlier history is truncated.";
+"opencodex_access_attribution_since" = "Usage attribution since";
+"opencodex_access_advanced_hint" = "Manage provider and model restrictions in the dashboard. Unauthenticated loopback usage may not be attributed to this key.";
+"opencodex_access_revoke_title" = "Revoke this key?";
+"opencodex_access_revoke" = "Revoke key";
+"opencodex_access_cancel" = "Cancel";
+"opencodex_access_revoke_warning" = "Revoke “%@” (%@)? Connections using this key may stop working.";
+"opencodex_access_create_succeeded" = "Key created.";
+"opencodex_access_rename_succeeded" = "Key renamed.";
+"opencodex_access_revoke_succeeded" = "Key revoked.";
+"opencodex_access_confirmation_hint" = "Check the latest list before deciding what to do. Refresh cannot recover a newly created secret. No change is retried automatically.";
+"opencodex_access_duplicate_name" = "Another key has the same name. Check the masked prefix before acting.";
+"opencodex_access_created_at" = "Created";
+"opencodex_access_providers" = "Allowed providers";
+"opencodex_access_models" = "Allowed models";
+"opencodex_access_rename" = "Rename";
+"opencodex_access_save_name" = "Save name";
+"opencodex_access_metadata_unavailable" = "Not provided by the server";
+"opencodex_access_scope_empty" = "Empty list reported by the server";
+"opencodex_access_usage_unavailable" = "Cannot determine";
+"opencodex_access_no_usage" = "No recorded usage";
+"opencodex_access_requests_7d" = "Requests in 7 days";
+"opencodex_access_requests_total" = "Total recorded requests";
+"opencodex_access_last_used" = "Last used";
+"opencodex_access_rename_unchecked" = "Safe rename support has not been checked for this installation.";
+"opencodex_access_created_title" = "Your new API key";
+"opencodex_access_secret_once" = "Save this secret now. Closing this result releases the app’s copy; it cannot be retrieved later.";
+"opencodex_access_hide" = "Hide secret";
+"opencodex_access_reveal" = "Show secret";
+"opencodex_access_copy" = "Copy secret";
+"opencodex_access_clipboard_policy" = "Copies are marked as local, concealed, and temporary. The default expiry is 60 seconds; later clipboard contents are preserved.";
+"opencodex_access_copied" = "Copied.";
+"opencodex_access_copy_failed" = "Could not copy. Try the copy button again.";
+"opencodex_access_close" = "Close and release secret";
+"opencodex_access_error_executableMissing" = "Opencodex executable was not found.";
+"opencodex_access_error_unsupportedRole" = "Manage keys on the hub. This device does not own local management.";
+"opencodex_access_error_serverStopped" = "The Opencodex server is stopped.";
+"opencodex_access_error_invalidResponse" = "The Opencodex response is invalid.";
+"opencodex_access_error_outputTooLarge" = "The Opencodex response exceeded the size limit.";
+"opencodex_access_error_communicationFailed" = "Could not communicate with Opencodex.";
+"opencodex_access_error_permissionDenied" = "Management permission was denied.";
+"opencodex_access_error_notFound" = "The key no longer exists. Refresh and select again.";
+"opencodex_access_error_invalidName" = "Enter 1–64 UTF-16 units, without control characters or CLI option names.";
+"opencodex_access_error_invalidID" = "The key ID is invalid. Refresh and select again.";
+"opencodex_access_error_renameUnsupported" = "Safe rename is unsupported in this Opencodex installation. Other key actions remain available.";
+"opencodex_access_error_confirmationRequired" = "The change outcome needs confirmation.";
+"opencodex_access_error_mutationInProgress" = "Another key change is in progress.";
+"opencodex_access_error_invalidDashboardURL" = "The dashboard address is not a safe HTTP(S) address.";
+"Opencodex Dashboard" = "Opencodex Dashboard";
+"Loading Opencodex dashboard…" = "Loading Opencodex dashboard…";
+"Current dashboard address" = "Current dashboard address";
+"Retry dashboard" = "Retry dashboard";
+"Open in browser" = "Open in browser";
+"Manage Opencodex on the hub for this connection." = "Manage Opencodex on the hub for this connection.";
+"The Opencodex server is stopped. Start it and try again." = "The Opencodex server is stopped. Start it and try again.";
+"The Opencodex status response is invalid." = "The Opencodex status response is invalid.";
+"The dashboard address is missing or unsafe." = "The dashboard address is missing or unsafe.";
+"Could not read Opencodex status." = "Could not read Opencodex status.";
+"Could not load the Opencodex dashboard." = "Could not load the Opencodex dashboard.";
+"A secure connection to the dashboard could not be established." = "A secure connection to the dashboard could not be established.";
+"An external page was blocked. Open it in your browser to continue." = "An external page was blocked. Open it in your browser to continue.";
+"Could not open the external browser." = "Could not open the external browser.";
+"Could not create the dashboard window." = "Could not create the dashboard window.";
+"Opencodex" = "Opencodex";
+"opencodex_settings_executable" = "Opencodex executable path";
+"opencodex_settings_default_path" = "Default executable search";
+"opencodex_settings_apply_path" = "Apply path";
+"opencodex_settings_path_hint" = "Leave empty to use the default search locations. This path is independent of provider account settings.";
+"opencodex_settings_invalid_path" = "Enter an absolute executable path or leave it empty. Control characters and URLs are not accepted.";
+
+// Hub account management
+"Manage hub accounts..." = "Manage hub accounts...";
+"Could not open the hub browser." = "Could not open the hub browser.";
+"Add or re-authenticate accounts in the hub browser. Credentials stay on the hub." = "Add or re-authenticate accounts in the hub browser. Credentials stay on the hub.";
+"The switch result is unknown. Refresh the hub before trying again." = "The switch result is unknown. Refresh the hub before trying again.";
+
+/* Hub account sign-in and usage periods. */
+"Opening account sign-in in your browser…" = "Opening account sign-in in your browser…";
+"Finish signing in in your browser. Return here to check the account list." = "Finish signing in in your browser. Return here to check the account list.";
+"Checking the account list…" = "Checking the account list…";
+"Account list checked. Confirm that your account appears; opening the browser does not complete sign-in." = "Account list checked. Confirm that your account appears; opening the browser does not complete sign-in.";
+"This Mac still has a read-only or outdated account list. A new sign-in may not appear until hub sync resumes." = "This Mac still has a read-only or outdated account list. A new sign-in may not appear until hub sync resumes.";
+"Could not open your browser. Try opening the account manager again." = "Could not open your browser. Try opening the account manager again.";
+"Could not reach the account manager. Check the hub connection and try again." = "Could not reach the account manager. Check the hub connection and try again.";
+"Could not refresh the account list. Your browser sign-in may still have succeeded. Try refreshing again." = "Could not refresh the account list. Your browser sign-in may still have succeeded. Try refreshing again.";
+"Hub accounts" = "Hub accounts";
+"Open the account manager in your browser, then add an account or sign in again. Your sign-in stays on the hub." = "Open the account manager in your browser, then add an account or sign in again. Your sign-in stays on the hub.";
+"For sign-in from another Mac, the account manager also offers device-code sign-in." = "For sign-in from another Mac, the account manager also offers device-code sign-in.";
+"Add account or sign in again..." = "Add account or sign in again...";
+"Refresh accounts" = "Refresh accounts";
+"Accounts: %@" = "Accounts: %@";
+"Read-only account list; last hub update is unknown." = "Read-only account list; last hub update is unknown.";
+"Hub list updated %@." = "Hub list updated %@.";
+"Last hub update is unknown." = "Last hub update is unknown.";
+"Monthly usage" = "Monthly usage";
+"%@-minute usage" = "%@-minute usage";
+"%@-day usage" = "%@-day usage";
+"%@-hour usage" = "%@-hour usage";
+"No accounts found. Add an account in your browser, then refresh this list." = "No accounts found. Add an account in your browser, then refresh this list.";
+"Account list not loaded. Choose Refresh accounts to check it." = "Account list not loaded. Choose Refresh accounts to check it.";
+"Finish sign-in in your browser, then refresh accounts." = "Finish sign-in in your browser, then refresh accounts.";
+"Account list checked. Verify your account is listed." = "Account list checked. Verify your account is listed.";
+"Account list is not current. Check hub sync." = "Account list is not current. Check hub sync.";
+"Account management needs attention. Open Settings." = "Account management needs attention. Open Settings.";
+"Hub HTTPS management address" = "Hub HTTPS management address";
+"https://your-hub.example" = "https://your-hub.example";
+"Save address" = "Save address";
+"Use the hub's management address, not 127.0.0.1 or its data API address. For a Tailscale address, this Mac must be connected to the same tailnet." = "Use the hub's management address, not 127.0.0.1 or its data API address. For a Tailscale address, this Mac must be connected to the same tailnet.";
+"Set the hub's HTTPS management address in Settings. The local data tunnel cannot open the account manager." = "Set the hub's HTTPS management address in Settings. The local data tunnel cannot open the account manager.";
+
+"monthly_daily_target_format" = "每天約 %@，可用至重置";
+
+"Trae CN" = "Trae CN";
+"Show Trae CN usage" = "顯示 Trae CN 用量";
+"Sign in to Trae CN at trae.cn, then refresh CodexBar." = "請在 trae.cn 登入 Trae CN，然後重新整理 CodexBar。";
+"Trae CN usage response format changed." = "Trae CN 用量回應格式已變更。";
+"Trae CN request failed. Try refreshing later." = "Trae CN 請求失敗。請稍後嘗試重新整理。";
+"Use --provider copilot." = "請使用 --provider copilot。";
+"Config changed during login. Please try again." = "登入期間設定已變更。請重試。";
+
 /* Public Codex reset announcements. */
 "reset_news_title" = "Codex reset news";
 "reset_news_help" = "Show public reset reports in the Codex menu. Checks every five minutes while enabled; no account sign-in is shared.";
@@ -2743,3 +2874,9 @@
 "reset_news_stale" = "Data may be outdated";
 "reset_news_attribution" = "Data from %@";
 "reset_news_disclaimer" = "Community reports. Check your account for actual limits.";
+"Could not start claude /login" = "無法啟動 claude /login";
+"menu_bar_style_subtitle" = "選單列項目的繪製方式。";
+"claude /login exited with status %d." = "claude /login 以狀態 %d 結束。";
+"Usage data appears after a refresh." = "刷新後會顯示使用情況資料。";
+"Usage data will appear once the app refreshes." = "應用程式刷新後，將顯示使用資料。";
+"Usage history will appear after a refresh." = "刷新後會出現使用歷史記錄。";

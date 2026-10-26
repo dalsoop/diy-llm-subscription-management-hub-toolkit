@@ -72,6 +72,7 @@ extension StatusItemController {
             // rebuild force-closes the hovered submenu. Each reopen then triggered another rescan,
             // producing an infinite open/close/rebuild flicker loop (#2652).
             self.store.noteMenuOpened()
+            self.store.checkHubAccountsAfterBrowserReturn()
             self.agentSessions.refreshOnMenuOpen()
         }
 
@@ -1103,7 +1104,7 @@ extension StatusItemController {
         }
         // Prefer an available provider so the default menu content matches the status icon.
         // Falls back to first display provider when all lack credentials.
-        return enabled.first(where: { self.store.isProviderAvailable($0) }) ?? enabled.first
+        return enabled.first(where: self.isEnabled) ?? enabled.first
     }
 
     func menuProvider(for menu: NSMenu) -> UsageProvider? {

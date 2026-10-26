@@ -3,6 +3,7 @@ import CodexBarCore
 import SwiftUI
 import WidgetKit
 import XCTest
+@testable import CodexBar
 @testable import CodexBarWidget
 
 @MainActor
@@ -13,7 +14,10 @@ final class BurnDownRenderProofTests: XCTestCase {
         }
         let output = URL(fileURLWithPath: path, isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        for (provider, minutes) in [(UsageProvider.devin, 1440), (.cursor, 43200), (.codex, 300)] {
+        for (name, provider, minutes) in [
+            ("devin", UsageProvider.devin, 1440), ("cursor", .cursor, 43200),
+            ("codex", .codex, 300), ("codex-monthly", .codex, 43200),
+        ] {
             let now = Date()
             let primary = RateWindow(
                 usedPercent: 25,
@@ -25,7 +29,20 @@ final class BurnDownRenderProofTests: XCTestCase {
                 windowMinutes: provider == .cursor ? minutes : 10080,
                 resetsAt: now.addingTimeInterval(86400),
                 resetDescription: nil)
-            let snapshot = BurnDownCapabilityTests.snapshot(provider: provider, primary: primary, secondary: secondary)
+            let rows: [WidgetSnapshot.WidgetUsageRowSnapshot]? = provider == .codex ? [
+                .init(
+                    id: minutes == 43200 ? "monthly" : "session",
+                    title: CodexConsumerProjection.rateTitle(
+                        lane: minutes == 43200 ? .monthly : .session,
+                        windowMinutes: minutes,
+                        sessionLabel: "Session",
+                        weeklyLabel: "Weekly"),
+                    percentLeft: primary.remainingPercent,
+                    window: primary),
+                .init(id: "weekly", title: "Weekly", percentLeft: secondary.remainingPercent, window: secondary),
+            ] : nil
+            let snapshot = BurnDownCapabilityTests.snapshot(
+                provider: provider, primary: primary, secondary: secondary, rows: rows)
             let view = CombinedBurnDownWidgetView(entry: .init(date: now, provider: provider, snapshot: snapshot))
                 .environment(\.colorScheme, .light)
                 .environment(\.widgetRenderingMode, .fullColor)
@@ -39,7 +56,7 @@ final class BurnDownRenderProofTests: XCTestCase {
             let bitmap = try XCTUnwrap(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
             hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
             let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-            try data.write(to: output.appendingPathComponent("\(provider.rawValue).png"))
+            try data.write(to: output.appendingPathComponent("\(name).png"))
         }
     }
 }

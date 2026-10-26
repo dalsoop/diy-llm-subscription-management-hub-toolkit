@@ -14,6 +14,83 @@ struct AppDelegateTests {
     }
 
     @Test
+    func `explicit reopens reveal and reuse Settings without changing the selected pane`() async {
+        let application = NSApplication.shared
+        let appDelegate = AppDelegate()
+        let selection = PreferencesSelection(userDefaults: InMemoryUserDefaults())
+        selection.pane = .opencodex
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false)
+        var created = 0
+        var presented: [NSWindow] = []
+        let controller = SettingsWindowController(
+            selection: selection,
+            makeWindow: {
+                created += 1
+                return window
+            },
+            prepareToPresent: {},
+            registerWindow: { _ in },
+            presentWindow: { presented.append($0) },
+            didPresentWindow: { _ in },
+            presentationFailed: {})
+        appDelegate._test_configureSettingsWindowController(controller)
+        await self.drainSettingsRequests()
+        #expect(presented.isEmpty)
+
+        #expect(appDelegate.applicationShouldHandleReopen(application, hasVisibleWindows: false) == false)
+        await self.drainSettingsRequests()
+        window.close()
+        #expect(appDelegate.applicationShouldHandleReopen(application, hasVisibleWindows: true) == false)
+        await self.drainSettingsRequests()
+
+        #expect(created == 1)
+        #expect(presented.count == 2)
+        #expect(presented.allSatisfy { $0 === window })
+        #expect(selection.pane == .opencodex)
+    }
+
+    @Test
+    func `early reopens wait for configuration and coalesce into one Settings presentation`() async {
+        let application = NSApplication.shared
+        let appDelegate = AppDelegate()
+        var attempts = 0
+        let controller = SettingsWindowController(
+            selection: PreferencesSelection(userDefaults: InMemoryUserDefaults()),
+            makeWindow: {
+                attempts += 1
+                return nil
+            },
+            prepareToPresent: {},
+            registerWindow: { _ in },
+            presentWindow: { _ in },
+            didPresentWindow: { _ in },
+            presentationFailed: {})
+
+        #expect(appDelegate.applicationShouldHandleReopen(application, hasVisibleWindows: false) == false)
+        #expect(appDelegate.applicationShouldHandleReopen(application, hasVisibleWindows: false) == false)
+        await self.drainSettingsRequests()
+        #expect(attempts == 0)
+
+        appDelegate._test_configureSettingsWindowController(controller)
+        await self.drainSettingsRequests()
+        #expect(attempts == 1)
+        // A failed presentation must allow a later explicit reopen to retry.
+        #expect(appDelegate.applicationShouldHandleReopen(application, hasVisibleWindows: false) == false)
+        await self.drainSettingsRequests()
+        #expect(attempts == 2)
+    }
+
+    private func drainSettingsRequests() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+
+    @Test
     func `builds status controller after launch`() {
         let appDelegate = AppDelegate()
         var factoryCalls = 0

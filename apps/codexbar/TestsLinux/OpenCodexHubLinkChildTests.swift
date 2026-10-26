@@ -36,7 +36,7 @@ struct OpenCodexHubLinkChildTests {
         """#
     }
 
-    /// What `ocx account list <provider> --quota --json` prints on the child (the hub's cached pool).
+    /// What `ocx account list <provider> --json` prints on the child (the hub's cached pool).
     static let childList = #"""
     {"accounts": [
       {"provider": "%PROVIDER%", "id": "chatgpt-1791743620f0f", "email": "b***b@example.com", "active": false,
@@ -76,17 +76,48 @@ struct OpenCodexHubLinkChildTests {
 
     /// A fake `ocx` reporting `role` (nil: no status document), listing every pool like a child does, and
     /// refusing `account use` the way opencodex refuses it on a link child.
-    private func makeChild(role: String? = "client", listWorks: Bool = true) throws -> Fixture {
+    private func makeChild(
+        role: String? = "client",
+        listWorks: Bool = true,
+        accountCount: Int = 2,
+        includeQuota: Bool = true) throws -> Fixture
+    {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("opencodex-link-child-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         for provider in ["anthropic", "openai", "xai"] {
-            try Self.childList.replacingOccurrences(of: "%PROVIDER%", with: provider)
+            var document = Self.childList.replacingOccurrences(of: "%PROVIDER%", with: provider)
+            if accountCount > 2 || !includeQuota {
+                var object = try #require(JSONSerialization.jsonObject(with: Data(document.utf8)) as? [String: Any])
+                var accounts = try #require(object["accounts"] as? [[String: Any]])
+                for index in 2..<accountCount {
+                    accounts.append([
+                        "provider": provider, "id": "synthetic-new-\(String(format: "%04x", index))",
+                        "email": "n\(index)***w@example.com", "active": false,
+                    ])
+                }
+                if !includeQuota {
+                    accounts = accounts.map { row in
+                        var copy = row
+                        copy.removeValue(forKey: "quota")
+                        return copy
+                    }
+                }
+                object["accounts"] = accounts
+                document = try #require(String(data: JSONSerialization.data(withJSONObject: object), encoding: .utf8))
+            }
+            try document
                 .write(to: directory.appendingPathComponent("list-\(provider).json"), atomically: true, encoding: .utf8)
         }
         let status = role.map { #"printf '{"schemaVersion":1,"runtimeRole":"%s"}\n' '\#($0)'"# }
             ?? #"echo "Error: unknown command" >&2; exit 64"#
-        let list = listWorks ? #"cat "$DIR/list-$3.json""# : #"echo "Error: not_found" >&2; exit 1"#
+        let list = listWorks ? #"""
+        if [ "$#" -ne 4 ] || [ "$4" != "--json" ]; then
+          echo 'Remote Link Child: passive account list only; no request was sent' >&2
+          exit 1
+        fi
+        cat "$DIR/list-$3.json"
+        """# : #"echo "Error: not_found" >&2; exit 1"#
         let url = directory.appendingPathComponent("ocx")
         let script = """
         DIR='\(directory.path)'
@@ -222,5 +253,115 @@ struct OpenCodexHubLinkChildTests {
                 snapshotPath: nil)
         }
         #expect(!child.calls.contains { $0.hasPrefix("account use") })
+    }
+
+    @Test(arguments: [3, 12, 20, 50], OpenCodexHubProvider.allCases)
+    func `new hub accounts survive the client's quota refresh refusal at larger pool sizes`(
+        count: Int, provider: OpenCodexHubProvider) async throws
+    {
+        let child = try self.makeChild(accountCount: count)
+        try child.writeSnapshot(updatedAt: Date().addingTimeInterval(-OpenCodexHubPool.staleInterval - 60))
+        let pool = try await OpenCodexHubReader.readPool(
+            provider: provider, executablePath: child.ocx, snapshotPath: child.snapshotPath)
+        #expect(pool.accounts.count == count)
+        #expect(pool.accounts.last?.idSuffix == String(format: "%04x", count - 1))
+        #expect(pool.accounts.last?.quota.isEmpty == true)
+        #expect(pool.isLinkedCopy)
+        #expect(!pool.switchable)
+        #expect(pool.accounts.allSatisfy { !pool.canSwitch(to: $0) })
+        #expect(child.calls == ["status --json", "account list \(provider.rawValue) --json"])
+        #expect(child.requestFiles.isEmpty)
+        let bytes = try Data(contentsOf: child.directory.appendingPathComponent("list-\(provider.rawValue).json"))
+        #expect(bytes.count < OpenCodexHubReader.maxOutputBytes)
+    }
+
+    @Test
+    func `a failed passive list preserves the stale snapshot timestamp`() async throws {
+        let child = try self.makeChild(listWorks: false)
+        let old = Date(timeIntervalSince1970: 1_800_000_000)
+        try child.writeSnapshot(updatedAt: old)
+        let pool = try await OpenCodexHubReader.readPool(
+            provider: .anthropic,
+            executablePath: child.ocx,
+            snapshotPath: child.snapshotPath,
+            now: old.addingTimeInterval(OpenCodexHubPool.staleInterval + 60))
+        #expect(pool.accounts.count == 2)
+        #expect(pool.snapshotUpdatedAt == old)
+        #expect(pool.isStale(now: old.addingTimeInterval(OpenCodexHubPool.staleInterval + 60)))
+        #expect(child.calls == ["status --json", "account list anthropic --json"])
+    }
+
+    @Test(arguments: ["matching", "changed-email", "ambiguous"])
+    func `passive lists retain only uniquely matched dated quota without copying old account state`(
+        scenario: String) async throws
+    {
+        let child = try self.makeChild(accountCount: 3, includeQuota: false)
+        let old = Date(timeIntervalSince1970: 1_800_000_000)
+        var document = try #require(JSONSerialization.jsonObject(
+            with: Data(Self.snapshot(updatedAt: old).utf8)) as? [String: Any])
+        var state = try #require(document["state"] as? [String: Any])
+        var providers = try #require(state["providers"] as? [String: Any])
+        let cached: [String: Any] = [
+            "idSuffix": "0f0f", "email": scenario == "changed-email" ? "c***c@example.com" : "b***b@example.com",
+            "active": false, "paused": true, "needsReauth": true,
+            "quota": ["weeklyPercent": 0, "updatedAt": old.timeIntervalSince1970 * 1000],
+        ]
+        providers["anthropic"] = ["switchable": true, "accounts": scenario == "ambiguous" ? [cached, cached] : [cached]]
+        state["providers"] = providers
+        document["state"] = state
+        try JSONSerialization.data(withJSONObject: document).write(to: URL(fileURLWithPath: child.snapshotPath))
+        let pool = try await OpenCodexHubReader.readPool(
+            provider: .anthropic,
+            executablePath: child.ocx,
+            snapshotPath: child.snapshotPath,
+            now: old.addingTimeInterval(OpenCodexHubPool.staleInterval + 60))
+        let first = try #require(pool.accounts.first)
+        #expect(pool.accounts.count == 3)
+        #expect(!first.isPaused)
+        #expect(!first.needsReauth)
+        #expect(!first.isActive)
+        #expect(first.quota.isEmpty == (scenario != "matching"))
+        if scenario == "matching" {
+            #expect(first.quota.weekly?.usedPercent == 0)
+            #expect(first.quota.updatedAt == old)
+            #expect(first.quotaUnavailable)
+        }
+        #expect(pool.accounts.last?.quota.isEmpty == true)
+        #expect(pool.isLinkedCopy)
+    }
+
+    @Test(arguments: [12, 20, 50])
+    func `a large current snapshot can request its last Claude account without changing accounts locally`(
+        count: Int) async throws
+    {
+        let child = try self.makeChild()
+        let now = Date()
+        let stamp = ISO8601DateFormatter().string(from: now)
+        let accounts: [[String: Any]] = (0..<count).map { index in
+            ["idSuffix": String(format: "%04x", index), "email": "a\(index)***e@example.com", "active": index == 0]
+        }
+        let document: [String: Any] = [
+            "updatedAt": stamp,
+            "state": [
+                "schemaVersion": 2,
+                "hub": "hub-mac",
+                "fetchedAt": stamp,
+                "providers": ["anthropic": ["switchable": true, "accounts": accounts]],
+            ],
+        ]
+        try JSONSerialization.data(withJSONObject: document).write(to: URL(fileURLWithPath: child.snapshotPath))
+        let outcome = try await OpenCodexHubReader.switchAccount(
+            provider: .anthropic,
+            idSuffix: String(format: "%04x", count - 1),
+            email: "a\(count - 1)***e@example.com",
+            executablePath: child.ocx,
+            snapshotPath: child.snapshotPath)
+        guard case let .requested(request) = outcome else {
+            Issue.record("Expected a hub request for the last account")
+            return
+        }
+        #expect(request.targetIDSuffix == String(format: "%04x", count - 1))
+        #expect(child.requestFiles.count == 1)
+        #expect(child.calls == ["status --json"])
     }
 }

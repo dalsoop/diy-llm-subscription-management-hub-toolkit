@@ -2,13 +2,17 @@
 "%@ %@" = "%@ %@";
 "%@ API est. · not billed" = "%@ API est. · ไม่มีการเรียกเก็บเงิน";
 "%@ cost" = "ค่าใช้จ่าย %@";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ ไม่พร้อมใช้งาน แก้ไขวิดเจ็ตเพื่อเลือกผู้ให้บริการ";
 "%@ left" = "เหลือ %@";
 "%@ tokens" = "โทเค็น %@";
 "%@ used" = "%@ ใช้แล้ว";
 "%@, selected" = "เลือก %@ แล้ว";
 "%@-day limit" = "ขีดจำกัด %@ วัน";
+"%@-day usage" = "%@-day usage";
 "%@-hour limit" = "ขีดจำกัดในช่วง %@ ชั่วโมง";
+"%@-hour usage" = "%@-hour usage";
 "%@-minute limit" = "ขีดจำกัด %@ นาที";
+"%@-minute usage" = "%@-minute usage";
 "%@: %@" = "%@: %@";
 "%@D" = "%@วัน";
 "%@H" = "%@ชม.";
@@ -75,6 +79,7 @@
 "Daily usage" = "การใช้งานรายวัน";
 "Deployment" = "การปรับใช้";
 "Edit predictions" = "แก้ไขคำทำนาย";
+"Enable a provider in CodexBar → Settings → Providers." = "เปิดใช้งานผู้ให้บริการใน CodexBar → การตั้งค่า → ผู้ให้บริการ";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "เปิดใช้งานวิดเจ็ตบัญชีใน CodexBar → การตั้งค่า → เมนู → วิดเจ็ต จากนั้นแก้ไขวิดเจ็ตนี้เพื่อเลือกบัญชี";
 "Extra usage" = "การใช้งานเพิ่มเติม";
 "Extra usage balance" = "ยอดการใช้งานเพิ่มเติม";
@@ -97,6 +102,7 @@
 "Monthly budget" = "งบประมาณรายเดือน";
 "Monthly credits" = "เครดิต รายเดือน";
 "Monthly quota" = "โควต้า รายเดือน";
+"Monthly usage" = "Monthly usage";
 "No data" = "ไม่มีข้อมูล";
 "Not reported by %@" = "ไม่ได้รายงานโดย %@";
 "On-demand" = "การใช้งานตามความต้องการ";
@@ -164,10 +170,7 @@
 "Two quota burn-down charts in one tile." = "แผนภูมิเบิร์นดาวน์ โควต้า สองแผนภูมิในไทล์เดียว";
 "Unavailable account" = "บัญชี: ไม่พร้อมใช้งาน";
 "Usage" = "การใช้";
-"Usage data appears after a refresh." = "ข้อมูลการใช้งานจะปรากฏขึ้นหลังจากการรีเฟรช";
-"Usage data will appear once the app refreshes." = "ข้อมูลการใช้งานจะปรากฏขึ้นเมื่อแอปรีเฟรช";
 "Usage history chart with recent totals." = "แผนภูมิประวัติการใช้งานพร้อมผลรวมล่าสุด";
-"Usage history will appear after a refresh." = "ประวัติการใช้งานจะปรากฏขึ้นหลังจากการรีเฟรช";
 "Usage limit" = "ขีดจำกัดการใช้งาน";
 "Usage limits and reset countdowns for one saved account." = "ขีดจำกัดการใช้งานและรีเซ็ตการนับถอยหลังสำหรับบัญชีที่บันทึกไว้หนึ่งบัญชี";
 "Usage widget with a provider switcher." = "วิดเจ็ตการใช้งานพร้อมตัวสลับผู้ให้บริการ";
@@ -178,6 +181,7 @@
 "Weekly Window" = "หน้าต่างรายสัปดาห์";
 "Weekly quota" = "โควต้า รายสัปดาห์";
 "Weekly tokens" = "โทเค็น รายสัปดาห์";
+"Weekly usage" = "การใช้งานรายสัปดาห์";
 "Window" = "หน้าต่างการใช้งาน";
 "ZeroGPU" = "ZeroGPU";
 "after reset" = "หลังจากรีเซ็ต";

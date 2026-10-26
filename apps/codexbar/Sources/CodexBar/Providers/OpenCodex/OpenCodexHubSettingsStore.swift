@@ -8,6 +8,23 @@ extension SettingsStore {
     /// hub routes to; the provider's own sources behind an opencodex proxy read another login or none.
     static let openCodexHubCardProviders: [UsageProvider] = OpenCodexHubProvider.allCases.map(\.usageProvider)
 
+    func openCodexHubManagementOrigin(for provider: UsageProvider) -> String {
+        self.configSnapshot.providerConfig(for: provider.instanceID)?.sanitizedOpenCodexHubManagementOrigin
+            ?? OpenCodexHubDefaults.managementOrigin ?? ""
+    }
+
+    /// Invalid or credential-bearing input never enters the persisted settings.
+    @discardableResult
+    func setOpenCodexHubManagementOrigin(_ address: String, for provider: UsageProvider) -> Bool {
+        guard Self.openCodexHubCardProviders.contains(provider) else { return false }
+        let value = self.normalizedConfigValue(address)
+        guard value.map(OpenCodexHubManagement.isRemoteManagementOrigin) ?? true else { return false }
+        self.updateProviderConfig(provider: provider) { entry in
+            entry.openCodexHubManagementOrigin = value
+        }
+        return true
+    }
+
     func openCodexHubEnabled(for provider: UsageProvider) -> Bool {
         guard Self.openCodexHubCardProviders.contains(provider) else { return false }
         return self.configSnapshot.providerConfig(for: provider.instanceID)?.resolvedOpenCodexHubEnabled

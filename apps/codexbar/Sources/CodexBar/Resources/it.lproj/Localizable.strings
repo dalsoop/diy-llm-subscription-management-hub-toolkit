@@ -151,7 +151,7 @@
 "Local token history is unavailable or incomplete." = "La cronologia locale dei token non è disponibile o è incompleta.";
 "Could not add Codex account" = "Impossibile aggiungere l'account Codex";
 "Could not open Terminal for Gemini" = "Impossibile aprire Terminale per Gemini";
-"Could not start claude /login" = "Impossibile avviare claude /login";
+"Claude OAuth credentials read failed: CodexBar's Claude OAuth cache is temporarily unavailable in macOS Keychain. Check that the login keychain is unlocked in Keychain Access, then retry Refresh." = "Impossibile leggere le credenziali Claude OAuth: la cache Claude OAuth di CodexBar non è temporaneamente disponibile nel portachiavi di macOS. Verifica che il portachiavi di login sia sbloccato in Accesso Portachiavi, quindi riprova ad aggiornare.";
 "Could not start codex login" = "Impossibile avviare codex login";
 "Could not switch system account" = "Impossibile cambiare account di sistema";
 "Credits" = "Crediti";
@@ -629,7 +629,6 @@
 
 /* Display Pane */
 "menu_bar_style_title" = "Stile barra menu";
-"menu_bar_style_subtitle" = "Come viene rappresentato l'elemento della barra menu.";
 "menu_bar_inactive_display_contrast_title" = "Migliora la visibilità sugli schermi inattivi";
 "menu_bar_inactive_display_contrast_subtitle" = "Usa un rendering ad alto contrasto per mantenere leggibili icona e metrica sugli altri schermi.";
 "menu_bar_style_critters" = "Creature";
@@ -1241,6 +1240,7 @@
 "Password" = "Parola d'ordine";
 "%@ authentication is disabled." = "L'autenticazione %@ è disabilitata.";
 "%@ cookies are disabled." = "I cookie %@ sono disabilitati.";
+"%@ is unavailable. Edit the widget to choose a provider." = "%@ non è disponibile. Modifica il widget per scegliere un provider.";
 "%@ web API access is disabled." = "L'accesso web API %@ è disabilitato.";
 "Disable %@ dashboard cookie usage." = "Disabilita l'uso dei cookie dashboard %@.";
 "Keychain access is disabled in Advanced, so browser cookie import is unavailable." = "L'accesso al portachiavi è disabilitato in Avanzate, quindi l'importazione dei cookie dal browser non è disponibile.";
@@ -1306,7 +1306,6 @@
 "Windsurf session JSON bundle" = "Bundle JSON sessione Windsurf";
 "Workspace ID" = "ID workspace";
 "Your StepFun platform password. Used to login and obtain a session token." = "La tua password della piattaforma StepFun. Usata per accedere e ottenere un token di sessione.";
-"claude /login exited with status %d." = "claude /login è terminato con stato %d.";
 "codex login exited with status %d." = "codex login è terminato con stato %d.";
 "Cookie: …\n\nor paste a cURL capture from the Abacus AI dashboard" = "Cookie: …\n\noppure incolla una cattura cURL dalla dashboard di Abacus AI";
 "Cookie: …\n\nor paste the __Secure-next-auth.session-token value" = "Cookie: …\n\noppure incolla il valore di __Secure-next-auth.session-token";
@@ -1414,6 +1413,7 @@
 /* Menu bar layout editor */
 "menu_bar_layout_title" = "Disposizione";
 "menu_bar_layout_footer" = "Trascina i token per disporre la barra dei menu. Fai clic su un token per aggiungerlo; seleziona un token posizionato e premi Canc per rimuoverlo.";
+"menu_bar_layout_footer_requires_icon_and_percent" = "La disposizione si applica solo allo stile barra menu «%@». Seleziona quello stile qui sopra per modificarla.";
 "menu_bar_layout_group_identity" = "Identità";
 "menu_bar_layout_group_usage" = "Utilizzo";
 "menu_bar_layout_group_time" = "Tempo";
@@ -1804,6 +1804,7 @@
 "Details for %@" = "Dettagli per %@";
 "EST. %@" = "%@ stimato";
 "Enable Antigravity provider" = "Abilita il fornitore Antigravity";
+"Enable a provider in CodexBar → Settings → Providers." = "Abilita un provider in CodexBar → Impostazioni → Provider.";
 "Enable account widgets in CodexBar → Settings → Menu → Widgets. Then edit this widget to choose an account." = "Abilita i widget dell'account in CodexBar → Impostazioni → Menu → Widget. Quindi modifica questo widget per scegliere un account.";
 "Error: %@" = "Errore: %@";
 "Examples: alt+cmd+2, shift+right. Refresh (cmd+r), Settings (cmd+,) and Quit (cmd+q) are reserved." = "Esempi: alt+cmd+2, shift+right. Aggiorna (cmd+r), Impostazioni (cmd+,) e Esci (cmd+q) sono riservati.";
@@ -2018,10 +2019,7 @@
 "Top models:" = "Modelli principali:";
 "Two quota burn-down charts in one tile." = "Due grafici burn-down Limite in un unico riquadro.";
 "Usage & spend come from your console.groq.com browser session automatically. An API key is optional and only adds Enterprise Prometheus metrics." = "L'utilizzo e la spesa provengono automaticamente dalla sessione del browser console.groq.com. Una chiave API è opzionale e aggiunge solo Enterprise Prometheus Metrica.";
-"Usage data appears after a refresh." = "I dati sull'utilizzo vengono visualizzati dopo un aggiornamento.";
-"Usage data will appear once the app refreshes." = "I dati sull'utilizzo verranno visualizzati una volta aggiornata l'app.";
 "Usage history chart with recent totals." = "Grafico della cronologia di utilizzo con i totali recenti.";
-"Usage history will appear after a refresh." = "La cronologia di utilizzo verrà visualizzata dopo un aggiornamento.";
 "Usage limit" = "Limite di utilizzo";
 "Usage limits and reset countdowns for one saved account." = "Limiti di utilizzo e ripristino dei conti alla rovescia per un account salvato.";
 "Usage widget with a provider switcher." = "Widget di utilizzo con un cambio di provider.";
@@ -2119,6 +2117,8 @@
 "Poe usage history is unavailable." = "La cronologia di utilizzo di Poe non è disponibile.";
 "Stored in ~/.codexbar/config.json. Get your key from poe.com/api/keys." = "Memorizzato in ~/.codexbar/config.json. Ottieni la tua chiave da poe.com/api/keys.";
 "Billing" = "Fatturazione";
+"Invoice billing" = "Pagamento tramite fattura";
+"Prepaid" = "Prepagato";
 "Rate limit" = "Limite di richieste";
 "Billing and rate-limit data from the v0 Platform API" = "Dati di fatturazione e limiti di richieste dall’API della piattaforma v0";
 "v0 cost history is not available via the Platform API." = "Lo storico dei costi v0 non è disponibile tramite la piattaforma API.";
@@ -2470,7 +2470,7 @@
 "spend_performance_cache_help" = "Input in cache diviso per input totale nei turni idonei. Ponderato per token di input, con copertura dei campioni.";
 "spend_performance_metric_help" = "Informazioni sulle osservazioni";
 "merged_icon_source_title" = "Origine dell’icona combinata";
-"merged_icon_source_subtitle" = "Scegli quale provider mostra l’icona combinata quando è compressa.";
+"merged_icon_source_subtitle" = "«Utilizzo più alto» confronta solo le quote. Per i provider senza quote, usa «Selezione corrente».";
 "merged_icon_source_current_selection" = "Selezione corrente";
 "merged_icon_source_highest_usage" = "Utilizzo più alto";
 "merged_icon_source_frontmost_app" = "App del provider in primo piano";
@@ -2746,6 +2746,137 @@
 "Shows this provider's accounts and limits from an opencodex hub instead of its own sources. On the hub CodexBar switches accounts through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Mostra gli account e i limiti di questo fornitore da un hub opencodex invece che dalle sue fonti. Sull’hub CodexBar cambia account tramite `ocx`; gli altri Mac leggono il file di istantanea dell’hub e gli chiedono di cambiare. Le credenziali restano sull’hub; CodexBar non le legge mai.";
 "Shows the Claude accounts of an opencodex hub. On the hub CodexBar switches the pool's active account through `ocx`; other Macs read the hub's snapshot file and ask the hub to switch. Credentials stay on the hub; CodexBar never reads them." = "Mostra gli account Claude di un hub opencodex. Sull’hub CodexBar cambia l’account attivo del gruppo tramite `ocx`; gli altri Mac leggono il file di istantanea dell’hub e gli chiedono di cambiare. Le credenziali restano sull’hub; CodexBar non le legge mai.";
 
+/* Opencodex local access and dashboard */
+"opencodex_access_title" = "Chiavi API";
+"opencodex_access_refresh" = "Aggiorna";
+"opencodex_access_dashboard" = "Apri dashboard";
+"opencodex_access_mutating" = "Modifica di una chiave in corso… Puoi lasciare questo pannello mentre viene completata.";
+"opencodex_access_refresh_failed" = "Aggiornamento non riuscito. Le chiavi mostrate non possono essere modificate finché un aggiornamento non riesce.";
+"opencodex_access_loading" = "Caricamento delle chiavi…";
+"opencodex_access_name" = "Nome della chiave";
+"opencodex_access_create" = "Crea chiave";
+"opencodex_access_empty" = "Nessuna chiave API.";
+"opencodex_access_usage_incomplete" = "I dati di utilizzo sono incompleti.";
+"opencodex_access_history_truncated" = "La cronologia precedente è troncata.";
+"opencodex_access_attribution_since" = "Attribuzione dell'utilizzo dal";
+"opencodex_access_advanced_hint" = "Gestisci le restrizioni di provider e modelli nella dashboard. L'utilizzo in loopback non autenticato potrebbe non essere attribuito a questa chiave.";
+"opencodex_access_revoke_title" = "Revocare questa chiave?";
+"opencodex_access_revoke" = "Revoca chiave";
+"opencodex_access_cancel" = "Annulla";
+"opencodex_access_revoke_warning" = "Revocare “%@” (%@)? Le connessioni che usano questa chiave potrebbero smettere di funzionare.";
+"opencodex_access_create_succeeded" = "Chiave creata.";
+"opencodex_access_rename_succeeded" = "Chiave rinominata.";
+"opencodex_access_revoke_succeeded" = "Chiave revocata.";
+"opencodex_access_confirmation_hint" = "Controlla l'elenco più recente prima di decidere cosa fare. L'aggiornamento non può recuperare un segreto appena creato. Nessuna modifica viene ritentata automaticamente.";
+"opencodex_access_duplicate_name" = "Un'altra chiave ha lo stesso nome. Controlla il prefisso mascherato prima di procedere.";
+"opencodex_access_created_at" = "Creata";
+"opencodex_access_providers" = "Provider consentiti";
+"opencodex_access_models" = "Modelli consentiti";
+"opencodex_access_rename" = "Rinomina";
+"opencodex_access_save_name" = "Salva nome";
+"opencodex_access_metadata_unavailable" = "Non fornito dal server";
+"opencodex_access_scope_empty" = "Elenco vuoto restituito dal server";
+"opencodex_access_usage_unavailable" = "Impossibile determinare";
+"opencodex_access_no_usage" = "Nessun utilizzo registrato";
+"opencodex_access_requests_7d" = "Richieste in 7 giorni";
+"opencodex_access_requests_total" = "Richieste registrate totali";
+"opencodex_access_last_used" = "Ultimo utilizzo";
+"opencodex_access_rename_unchecked" = "Il supporto alla rinomina sicura non è stato verificato per questa installazione.";
+"opencodex_access_created_title" = "La tua nuova chiave API";
+"opencodex_access_secret_once" = "Salva subito questo segreto. Chiudendo questo risultato, l'app rilascia la sua copia; non potrà essere recuperato in seguito.";
+"opencodex_access_hide" = "Nascondi segreto";
+"opencodex_access_reveal" = "Mostra segreto";
+"opencodex_access_copy" = "Copia segreto";
+"opencodex_access_clipboard_policy" = "Le copie sono contrassegnate come locali, nascoste e temporanee. La scadenza predefinita è di 60 secondi; i contenuti copiati in seguito negli appunti vengono conservati.";
+"opencodex_access_copied" = "Copiato.";
+"opencodex_access_copy_failed" = "Impossibile copiare. Riprova con il pulsante Copia.";
+"opencodex_access_close" = "Chiudi e rilascia il segreto";
+"opencodex_access_error_executableMissing" = "Eseguibile di Opencodex non trovato.";
+"opencodex_access_error_unsupportedRole" = "Gestisci le chiavi sull'hub. Questo dispositivo non gestisce le chiavi localmente.";
+"opencodex_access_error_serverStopped" = "Il server Opencodex è fermo.";
+"opencodex_access_error_invalidResponse" = "La risposta di Opencodex non è valida.";
+"opencodex_access_error_outputTooLarge" = "La risposta di Opencodex ha superato il limite di dimensione.";
+"opencodex_access_error_communicationFailed" = "Impossibile comunicare con Opencodex.";
+"opencodex_access_error_permissionDenied" = "Permesso di gestione negato.";
+"opencodex_access_error_notFound" = "La chiave non esiste più. Aggiorna e selezionala di nuovo.";
+"opencodex_access_error_invalidName" = "Inserisci da 1 a 64 unità UTF-16, senza caratteri di controllo né nomi di opzioni CLI.";
+"opencodex_access_error_invalidID" = "L'ID della chiave non è valido. Aggiorna e selezionala di nuovo.";
+"opencodex_access_error_renameUnsupported" = "La rinomina sicura non è supportata in questa installazione di Opencodex. Le altre azioni sulle chiavi restano disponibili.";
+"opencodex_access_error_confirmationRequired" = "L'esito della modifica richiede una conferma.";
+"opencodex_access_error_mutationInProgress" = "È in corso un'altra modifica di una chiave.";
+"opencodex_access_error_invalidDashboardURL" = "L'indirizzo della dashboard non è un indirizzo HTTP(S) sicuro.";
+"Opencodex Dashboard" = "Dashboard Opencodex";
+"Loading Opencodex dashboard…" = "Caricamento della dashboard di Opencodex…";
+"Current dashboard address" = "Indirizzo attuale della dashboard";
+"Retry dashboard" = "Riprova dashboard";
+"Open in browser" = "Apri nel browser";
+"Manage Opencodex on the hub for this connection." = "Gestisci Opencodex sull'hub per questa connessione.";
+"The Opencodex server is stopped. Start it and try again." = "Il server Opencodex è fermo. Avvialo e riprova.";
+"The Opencodex status response is invalid." = "La risposta di stato di Opencodex non è valida.";
+"The dashboard address is missing or unsafe." = "L'indirizzo della dashboard manca o non è sicuro.";
+"Could not read Opencodex status." = "Impossibile leggere lo stato di Opencodex.";
+"Could not load the Opencodex dashboard." = "Impossibile caricare la dashboard di Opencodex.";
+"A secure connection to the dashboard could not be established." = "Impossibile stabilire una connessione sicura alla dashboard.";
+"An external page was blocked. Open it in your browser to continue." = "Una pagina esterna è stata bloccata. Aprila nel browser per continuare.";
+"Could not open the external browser." = "Impossibile aprire il browser esterno.";
+"Could not create the dashboard window." = "Impossibile creare la finestra della dashboard.";
+"Opencodex" = "Opencodex";
+"opencodex_settings_executable" = "Percorso dell'eseguibile di Opencodex";
+"opencodex_settings_default_path" = "Ricerca predefinita dell'eseguibile";
+"opencodex_settings_apply_path" = "Applica percorso";
+"opencodex_settings_path_hint" = "Lascia vuoto per usare le posizioni di ricerca predefinite. Questo percorso è indipendente dalle impostazioni degli account dei provider.";
+"opencodex_settings_invalid_path" = "Inserisci un percorso assoluto dell'eseguibile o lascialo vuoto. Caratteri di controllo e URL non sono accettati.";
+
+// Hub account management
+"Manage hub accounts..." = "Gestisci account dell'hub...";
+"Could not open the hub browser." = "Impossibile aprire il browser dell'hub.";
+"Add or re-authenticate accounts in the hub browser. Credentials stay on the hub." = "Aggiungi o riautentica gli account nel browser dell'hub. Le credenziali restano sull'hub.";
+"The switch result is unknown. Refresh the hub before trying again." = "L'esito del cambio è sconosciuto. Aggiorna l'hub prima di riprovare.";
+
+/* Hub account sign-in and usage periods. */
+"Opening account sign-in in your browser…" = "Apertura dell'accesso all'account nel browser…";
+"Finish signing in in your browser. Return here to check the account list." = "Completa l'accesso nel browser. Torna qui per controllare l'elenco account.";
+"Checking the account list…" = "Verifica dell'elenco account…";
+"Account list checked. Confirm that your account appears; opening the browser does not complete sign-in." = "Elenco account verificato. Conferma che il tuo account sia presente; aprire il browser non completa l'accesso.";
+"This Mac still has a read-only or outdated account list. A new sign-in may not appear until hub sync resumes." = "Questo Mac ha ancora un elenco account in sola lettura o non aggiornato. Un nuovo accesso potrebbe non comparire finché la sincronizzazione dell'hub non riprende.";
+"Could not open your browser. Try opening the account manager again." = "Impossibile aprire il browser. Prova ad aprire di nuovo il gestore account.";
+"Could not reach the account manager. Check the hub connection and try again." = "Impossibile raggiungere il gestore account. Controlla la connessione all'hub e riprova.";
+"Could not refresh the account list. Your browser sign-in may still have succeeded. Try refreshing again." = "Impossibile aggiornare l'elenco account. L'accesso dal browser potrebbe comunque essere riuscito. Prova ad aggiornare di nuovo.";
+"Hub accounts" = "Account dell'hub";
+"Open the account manager in your browser, then add an account or sign in again. Your sign-in stays on the hub." = "Apri il gestore account nel browser, poi aggiungi un account o accedi di nuovo. L'accesso resta sull'hub.";
+"For sign-in from another Mac, the account manager also offers device-code sign-in." = "Per accedere da un altro Mac, il gestore account offre anche l'accesso con codice dispositivo.";
+"Add account or sign in again..." = "Aggiungi account o accedi di nuovo...";
+"Refresh accounts" = "Aggiorna account";
+"Accounts: %@" = "Account: %@";
+"Read-only account list; last hub update is unknown." = "Elenco account in sola lettura; l'ultimo aggiornamento dell'hub è sconosciuto.";
+"Hub list updated %@." = "Elenco dell'hub aggiornato %@.";
+"Last hub update is unknown." = "L'ultimo aggiornamento dell'hub è sconosciuto.";
+"Monthly usage" = "Utilizzo mensile";
+"%@-minute usage" = "Utilizzo di %@ minuti";
+"%@-day usage" = "Utilizzo di %@ giorni";
+"%@-hour usage" = "Utilizzo di %@ ore";
+"No accounts found. Add an account in your browser, then refresh this list." = "Nessun account trovato. Aggiungi un account nel browser, poi aggiorna questo elenco.";
+"Account list not loaded. Choose Refresh accounts to check it." = "Elenco account non caricato. Scegli Aggiorna account per controllarlo.";
+"Finish sign-in in your browser, then refresh accounts." = "Completa l'accesso nel browser, poi aggiorna gli account.";
+"Account list checked. Verify your account is listed." = "Elenco account verificato. Verifica che il tuo account sia presente.";
+"Account list is not current. Check hub sync." = "L'elenco account non è aggiornato. Controlla la sincronizzazione dell'hub.";
+"Account management needs attention. Open Settings." = "La gestione degli account richiede attenzione. Apri Impostazioni.";
+"Hub HTTPS management address" = "Indirizzo di gestione HTTPS dell'hub";
+"https://your-hub.example" = "https://il-tuo-hub.example";
+"Save address" = "Salva indirizzo";
+"Use the hub's management address, not 127.0.0.1 or its data API address. For a Tailscale address, this Mac must be connected to the same tailnet." = "Usa l'indirizzo di gestione dell'hub, non 127.0.0.1 né l'indirizzo della sua API dati. Per un indirizzo Tailscale, questo Mac deve essere connesso alla stessa tailnet.";
+"Set the hub's HTTPS management address in Settings. The local data tunnel cannot open the account manager." = "Imposta l'indirizzo di gestione HTTPS dell'hub in Impostazioni. Il tunnel dati locale non può aprire il gestore account.";
+
+"monthly_daily_target_format" = "≈ %@ / giorno per arrivare al reset";
+
+"Trae CN" = "Trae CN";
+"Show Trae CN usage" = "Mostra l’utilizzo di Trae CN";
+"Sign in to Trae CN at trae.cn, then refresh CodexBar." = "Accedi a Trae CN su trae.cn, quindi aggiorna CodexBar.";
+"Trae CN usage response format changed." = "Il formato della risposta di utilizzo di Trae CN è cambiato.";
+"Trae CN request failed. Try refreshing later." = "La richiesta a Trae CN non è riuscita. Riprova ad aggiornare più tardi.";
+"Use --provider copilot." = "Usa --provider copilot.";
+"Config changed during login. Please try again." = "La configurazione è cambiata durante l’accesso. Riprova.";
+
 /* Public Codex reset announcements. */
 "reset_news_title" = "Notizie sui ripristini di Codex";
 "reset_news_help" = "Mostra le segnalazioni pubbliche dei ripristini nel menu Codex. Controlla ogni cinque minuti quando attivo; nessun accesso agli account viene condiviso.";
@@ -2769,3 +2900,9 @@
 "reset_news_stale" = "I dati potrebbero non essere aggiornati";
 "reset_news_attribution" = "Dati da %@";
 "reset_news_disclaimer" = "Segnalazioni della comunità. Controlla i limiti effettivi nel tuo account.";
+"Could not start claude /login" = "Impossibile avviare claude /login";
+"menu_bar_style_subtitle" = "Come viene rappresentato l'elemento della barra menu.";
+"claude /login exited with status %d." = "claude /login è terminato con stato %d.";
+"Usage data appears after a refresh." = "I dati sull'utilizzo vengono visualizzati dopo un aggiornamento.";
+"Usage data will appear once the app refreshes." = "I dati sull'utilizzo verranno visualizzati una volta aggiornata l'app.";
+"Usage history will appear after a refresh." = "La cronologia di utilizzo verrà visualizzata dopo un aggiornamento.";

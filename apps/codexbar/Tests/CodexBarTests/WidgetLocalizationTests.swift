@@ -48,7 +48,12 @@ struct WidgetLocalizationTests {
             #expect(bundle.bundleURL.lastPathComponent.caseInsensitiveCompare("\(language.rawValue).lproj") ==
                 .orderedSame)
             try WidgetLocalizationOverride.$language.withValue(language.rawValue) {
-                for key in ["Choose an account", "Usage data will appear once the app refreshes.", "Credits left"] {
+                for key in [
+                    "Choose an account",
+                    "Enable a provider in CodexBar → Settings → Providers.",
+                    "Credits left",
+                    "No data",
+                ] {
                     #expect(W(key) == app[key])
                     if language != .english {
                         #expect(W(key) != key, "Untranslated widget text in \(language.rawValue): \(key)")
@@ -96,8 +101,23 @@ struct WidgetLocalizationTests {
         WidgetLocalizationOverride.$language.withValue("en") {
             #expect(burnFmtDuration(1500) == "1d 1h")
             #expect(burnFmtDuration(61) == "1h 01m")
-            #expect(burnWindowLabel(300) == "5-hour limit")
+            #expect(burnWindowLabel(300) == "5-hour usage")
             #expect(ProviderMarkLabel.text(for: .codex, isSelected: true) == "Codex, selected")
+        }
+    }
+
+    @Test
+    func `usage periods distinguish monthly categories from a thirty day lockout`() {
+        for language in ["en", "ko"] {
+            WidgetLocalizationOverride.$language.withValue(language) {
+                #expect(burnWindowLabel(43200) == W("Monthly usage"))
+                #expect(burnWindowTag(title: W("Monthly"), windowMinutes: 43200) == W("Monthly"))
+                #expect(burnWindowUsageLabel(title: W("Monthly"), windowMinutes: 43200) == W("Monthly usage"))
+                #expect(burnCompactWindowLabel(43200, fallback: "unknown") == W("Monthly"))
+                #expect(burnWindowLabel(10080) == W("Weekly usage"))
+                #expect(burnWindowLabel(1440) == W("%@-day usage", "1"))
+                #expect(burnWindowLabel(45) == W("%@-minute usage", "45"))
+            }
         }
     }
 }

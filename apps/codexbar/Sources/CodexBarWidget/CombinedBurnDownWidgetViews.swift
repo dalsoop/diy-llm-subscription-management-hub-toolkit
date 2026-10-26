@@ -96,7 +96,7 @@ private struct CombinedBurnDownLayout: View {
                             geom: geom,
                             theme: BurnTheme(
                                 provider: self.provider, geom: geom, dark: dark, isMonochrome: isMonochrome),
-                            tag: title + " · " + burnCompactWindowLabel(window.windowMinutes, fallback: ""),
+                            tag: burnWindowTag(title: title, windowMinutes: window.windowMinutes),
                             periods: window.windowMinutes == 300 ? 5 : 7,
                             metric: index == 0 ? .remaining : .pace,
                             dark: dark,

@@ -11,6 +11,7 @@ import Foundation
 public enum OpenCodexHubDefaults {
     static let snapshotPathKey = "CodexBarOpenCodexHubSnapshotPath"
     static let hubNameKey = "CodexBarOpenCodexHubName"
+    static let managementOriginKey = "CodexBarOpenCodexHubManagementOrigin"
 
     /// Whether the Claude, Codex and Grok cards read the opencodex hub when the user has not chosen.
     public static let sourceEnabledByDefault = Self.snapshotPath != nil
@@ -18,6 +19,8 @@ public enum OpenCodexHubDefaults {
     public static let snapshotPath: String? = Self.infoString(Self.snapshotPathKey)
     /// The managing machine's name when the snapshot does not carry one.
     public static let hubName: String? = Self.infoString(Self.hubNameKey)
+    /// A fleet-supplied HTTPS browser origin, independent of any client's data tunnel.
+    public static let managementOrigin: String? = Self.infoString(Self.managementOriginKey)
 
     private static func infoString(_ key: String) -> String? {
         SettingsValue.cleaned(Bundle.main.object(forInfoDictionaryKey: key) as? String)
@@ -25,6 +28,15 @@ public enum OpenCodexHubDefaults {
 }
 
 extension ProviderConfig {
+    public var openCodexHubManagementOrigin: String? {
+        get { self.extensionValue(forKey: "openCodexHubManagementOrigin") }
+        set { self.setExtensionValue(newValue, forKey: "openCodexHubManagementOrigin") }
+    }
+
+    public var sanitizedOpenCodexHubManagementOrigin: String? {
+        SettingsValue.cleaned(self.openCodexHubManagementOrigin)
+    }
+
     /// Codex and Grok: whether the card reads accounts from the opencodex hub instead of the provider's own
     /// sources. (Claude uses the account adapter with `claudeSwapSource = "opencodex"`.)
     public var openCodexHubEnabled: Bool? {
