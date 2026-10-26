@@ -10,7 +10,7 @@ This toolkit combines the Swift CodexBar usage/account menu bar app with the Bun
 ├── CLAUDE.md                         → identical Claude entry point
 ├── .github/
 │   ├── workflows/codexbar.yml        → active root CI on the self-hosted macOS runner
-│   └── runner/job-started-hook.sh    → runner-side job admission (installed on the CI machine)
+│   └── runner/job-started-hook.sh    → second-layer runner-side job refusal (installed on the CI machine)
 ├── docs/
 │   ├── architecture.md               → components, boundaries, and request/data flow
 │   ├── business-rules.md             → identity, quota, freshness, and account transitions
@@ -27,7 +27,7 @@ This toolkit combines the Swift CodexBar usage/account menu bar app with the Bun
 │           ├── 0001-hub-capability-projection.md → least-privilege linked-client reporting
 │           ├── 0002-optional-lab-registration.md → optional activation and synchronous startup
 │           ├── 0003-native-test-executables.md → native coverage without test-bundle runtimes
-│           └── 0004-self-hosted-macos-runner.md → self-hosted CI runner and fork refusal
+│           └── 0004-self-hosted-macos-runner.md → self-hosted CI runner behind fork-run approval
 ├── apps/
 │   └── codexbar/
 │       ├── AGENTS.md                 → menu bar application, Swift package, and safe validation

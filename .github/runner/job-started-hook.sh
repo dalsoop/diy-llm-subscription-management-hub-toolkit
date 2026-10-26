@@ -1,11 +1,12 @@
 #!/bin/bash
 # Job-started hook for the self-hosted macOS runner.
 #
-# The runner runs this before every job, and a non-zero exit fails the job
-# before any workflow step. It admits only push, workflow_dispatch, and
-# pull_request events whose head repository is the base repository. Anything
-# else fails closed, including an unset event name or a missing, unreadable,
-# or invalid event payload.
+# The runner runs this before every job. A non-zero exit fails the job and
+# skips its ordinary steps, but steps with an always() condition still run,
+# so this is a second layer behind the repository's approval of fork runs.
+# It admits only push, workflow_dispatch, and pull_request events whose head
+# repository is the base repository. Anything else fails closed, including an
+# unset event name or a missing, unreadable, or invalid event payload.
 #
 # Install a copy outside the runner application directory and reference it
 # from the runner's .env as ACTIONS_RUNNER_HOOK_JOB_STARTED. It only reads the
