@@ -122,6 +122,14 @@ extension UsageStore {
 
     func applyOpenCodexHubPool(_ pool: OpenCodexHubPool, provider: UsageProvider, now: Date = Date()) {
         var state = self.openCodexHubCardStates[provider] ?? OpenCodexHubCardState()
+        // The reader falls back to the snapshot file when `ocx` does not answer. A snapshot the hub stopped
+        // rewriting must not replace a current pool, and its numbers are never presented as current. Reading a
+        // stale snapshot is not a failed read, so the card's `lastError` stays clear; the provider is marked stale.
+        let staleError = pool.isStale(now: now) ? L("The opencodex hub snapshot is out of date") : nil
+        if let staleError, let current = state.pool, !current.isStale(now: now) {
+            self.errors[provider.instanceID] = staleError
+            return
+        }
         state.pool = pool
         state.lastError = nil
         state.lastRefreshAt = now
@@ -134,8 +142,10 @@ extension UsageStore {
                 provider: pool.provider,
                 fallbackUpdatedAt: pool.snapshotUpdatedAt ?? now)
             self.snapshots[provider.instanceID] = snapshot
-            self.errors[provider.instanceID] = nil
-            self.failureGates[provider.instanceID]?.recordSuccess()
+            self.errors[provider.instanceID] = staleError
+            if staleError == nil {
+                self.failureGates[provider.instanceID]?.recordSuccess()
+            }
         } else {
             self.snapshots.removeValue(forKey: provider.instanceID)
             self.errors[provider.instanceID] = L("No active account")
