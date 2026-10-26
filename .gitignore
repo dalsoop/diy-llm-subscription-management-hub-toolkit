@@ -24,3 +24,6 @@ DerivedData/
 *.local
 .tmp/
 *.log
+
+# Local task state and instruction backups
+.dryforge/

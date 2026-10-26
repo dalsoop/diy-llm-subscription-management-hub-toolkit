@@ -1,0 +1,37 @@
+# Engineering standards
+
+## Repository and delivery
+
+- Deliver toolkit branches and pull requests to `dalsoop/diy-llm-subscription-management-hub-toolkit`, targeting `main`. Historical standalone repositories are history, not implicit publishing destinations. Do not add an upstream remote or contribute upstream without an explicit request.
+- Stage only paths belonging to the active change. Do not revert another contributor's work or copy compiled products between worktrees.
+- Commit messages use short imperative subjects and scoped changes; record non-obvious design choices and their reasons in commit bodies. Pull requests state Summary, Verification, and Checklist, including exact commands, results, omissions, and UI evidence when applicable. Credit carried/reimplemented work with the original author's coauthor trailer.
+- GitHub executes the root `.github/workflows`. Nested component workflows are references in this checkout, not evidence that a toolkit check ran. Missing, skipped, cancelled, awaiting-approval, or old-head checks are not successful current-head evidence.
+- Release, publish, deployment, version-bump, and signing operations require the task's explicit authorization and maintainer policy. Local validation does not authorize publication. Do not weaken dry-run, exact-commit, CI-success, or explicit-confirmation gates.
+
+## Boundaries and dependencies
+
+- Use the existing dependency managers and lockfiles; do not introduce tooling/dependencies without confirmation. Authentication, OAuth, credential handling, management/CORS, workflows, release automation, and dependency-installation changes require explicit security review.
+- OpenCodex stays Bun-native TypeScript with strict ES modules and no assumed server compile step. Prefer Bun/Web APIs; a Node-only runtime dependency needs an explicitly required compatibility role.
+- Preserve public exports and configuration compatibility unless the change explicitly revises them. Provider facts come from the canonical registry/derivation flow, not independent picker seeds. Adapter changes preserve streaming, tool calls, cancellation, error mapping, and images for that adapter.
+- The default OpenCodex router, lifecycle, and Responses core must not reach optional Lab code through runtime imports. Optional subsystems register into core-owned slots. Activation after binding the listener and before returning the server stays synchronous and behind its activation gate.
+- Review every existing structure document mapped to a changed source area; update each whose current contract or local explanation changes. The source map may have several documents per area. Regenerate its index from the manifest rather than editing generated output. Preserve the existing contract registry and invariant/test bindings.
+- File-size ratchet caps only decrease. Extract cohesive siblings rather than raising a cap. Register a new/moved OpenCodex test in both its explicit layout map and expected fixture shard. Use repository-root helpers for source-oracle paths rather than assuming every test is one directory below the package root.
+- Generated GUI output, sidecars, native keyring resources, package assets, and documentation output are produced by their owning preparation commands, not hand-edited.
+
+## Language and presentation
+
+- Swift follows the component's four-space indentation, 120-column formatting, intentional explicit `self`, and small typed models. Swift Testing names are backticked sentences; existing XCTest suites keep their naming idiom.
+- Preserve existing organization and helpers. New SwiftUI work uses the existing Observation ownership patterns rather than introducing a second state-management style.
+- Visible OpenCodex GUI strings go through translation keys in every locale. Technical commands, model IDs, protocol fields, units, URLs, and code remain machine text rather than artificial translation keys. Preserve keyboard access, labels, focus, semantics, and readable validation failures.
+- Public documentation uses English as canonical; translations must not contradict it. User-visible behavior/configuration changes update directly affected public documentation. Do not promote historical planning notes to claims about shipped behavior without checking code/configuration.
+- Test/code model names must be released names or unmistakably fictitious names, never unreleased identifiers.
+
+## Verification
+
+- Use isolated component runners, synthetic homes, stubbed provider responses, and noninteractive credential stores. Do not substitute a real-account CLI/browser/Keychain probe for a test. An isolation flag alone does not isolate defaults search domains or filesystem migrations.
+- CodexBar changes require focused coverage of touched behavior and one `make check` before handoff. Use stable model/state seams for headless menu tests. The full sharded suite can run in the background or PR CI; it is not a foreground handoff blocker. Re-run a passing check only when a relevant input/environment changed, a failure/concern remains, or a maintainer requests it.
+- OpenCodex behavior changes require focused regressions and `bun run typecheck`. Full isolated tests are the default before a non-trivial PR is ready. A proportional resource exception still requires focused coverage, its reason, exact results, and the remaining coverage in the PR. Changed-import selection does not cover subprocess/source-as-data/golden dependencies; select those regressions explicitly.
+- Run privacy checks for changes involving configuration, credentials, logs, requests, account data, or fixtures. Keep structure and CLI-surface generation checks passing when their owned surfaces change.
+- GUI changes require focused tests and a successful build; visible-copy changes also require i18n lint. Review readiness requires GUI tests, lint, and build. Documentation-site changes require a frozen install and successful site build before claiming site validation.
+- Preserve direct-test inventory, deadlines, failure handling, cache verification, and clean fallback when changing CodexBar test execution. Do not raise concurrency merely to make an overloaded machine finish sooner.
+- Never report an unrun build/suite or historical container result as passing. Explicitly identify untested platforms and runtime paths. UI claims require the newly built bundle and visible screen evidence, not success at clicking off-screen coordinates.
