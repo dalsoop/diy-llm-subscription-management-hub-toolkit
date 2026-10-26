@@ -8,21 +8,29 @@ struct SettingsSidebarSizingTests {
     @Test
     func `native sidebar saves divider changes and restores them in a new view`() async throws {
         let width = SidebarWidth(value: 320)
+        let initialContentWidth = width.value
         let firstWindow = self.makeWindow(width: width)
         try await self.settle(firstWindow)
         let firstContent = try #require(firstWindow.contentView)
         let firstSplit = try #require(self.splitView(in: firstContent))
-        #expect(firstSplit.subviews[0].frame.width == 320)
+        // The column preference and saved binding describe content width. Native sidebar chrome can
+        // add an inset to NSSplitView's frame (8pt on macOS 26), so keep those coordinate spaces distinct.
+        let nativeInset = firstSplit.subviews[0].frame.width - initialContentWidth
+        #expect(nativeInset >= 0)
+        #expect(width.value == initialContentWidth)
 
-        firstSplit.setPosition(300, ofDividerAt: 0)
+        let dividerPosition: CGFloat = 300
+        firstSplit.setPosition(dividerPosition, ofDividerAt: 0)
         try await self.settle(firstWindow)
-        #expect(width.value == 300)
+        #expect(width.value == dividerPosition - nativeInset)
+        let savedContentWidth = width.value
 
         let secondWindow = self.makeWindow(width: width)
         try await self.settle(secondWindow)
         let secondContent = try #require(secondWindow.contentView)
         let secondSplit = try #require(self.splitView(in: secondContent))
-        #expect(secondSplit.subviews[0].frame.width == 300)
+        // Reopening must restore the user's actual divider position on every supported OS.
+        #expect(secondSplit.subviews[0].frame.width == dividerPosition)
 
         let controller = try #require(firstSplit.delegate as? NSSplitViewController)
         let sidebar = try #require(controller.splitViewItems.first)
@@ -30,10 +38,10 @@ struct SettingsSidebarSizingTests {
         sidebar.isCollapsed = true
         try await self.settle(firstWindow)
         #expect(sidebar.isCollapsed)
-        #expect(width.value == 300)
+        #expect(width.value == savedContentWidth)
         sidebar.isCollapsed = false
         try await self.settle(firstWindow)
-        #expect(width.value == 300)
+        #expect(width.value == savedContentWidth)
     }
 
     @Test
