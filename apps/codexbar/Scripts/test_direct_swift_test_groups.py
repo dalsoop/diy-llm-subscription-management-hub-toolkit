@@ -1,16 +1,85 @@
 #!/usr/bin/env python3
+import errno
 import json
 import io
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import threading
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import ci_swift_test_by_suite as runner
 from direct_swift_test_groups import InventoryMismatch, checked, pool_timeout, prepare_runtime, run_pool, run_worker, runtime_environment, selected_tests, xctest_inventory
+
+
+class SwiftDiscoveryCleanupTests(unittest.TestCase):
+    home = "/synthetic/discovery-home"
+    mount = home + "/Library/Developer/DVTDownloads/MetalToolchain/mounts/image"
+
+    def discover(self, cleanup_error, returncode=0, command_error=None):
+        directory = SimpleNamespace(name=self.home, cleanup=Mock(side_effect=cleanup_error))
+        result = subprocess.CompletedProcess(
+            ["swift", "test", "list"], returncode,
+            "CodexBarTests.ExampleTests/testFirst\n" if returncode == 0 else "discovery stdout marker\n",
+            "" if returncode == 0 else "discovery stderr marker\n")
+        output, errors = io.StringIO(), io.StringIO()
+        inventory = []
+        with patch.object(runner.tempfile, "TemporaryDirectory", return_value=directory), \
+                patch.object(runner.subprocess, "run", return_value=result, side_effect=command_error) as command, \
+                patch.dict(os.environ, {"HOME": "/synthetic/original-home"}, clear=True), \
+                patch("sys.stdout", output), patch("sys.stderr", errors):
+            selections = runner.swift_test_list(["swift"], inventory)
+        directory.cleanup.assert_called_once()
+        self.assertEqual(command.call_args.kwargs["env"]["HOME"], self.home)
+        self.assertEqual(command.call_args.kwargs["env"]["CFFIXED_USER_HOME"], self.home)
+        return selections, inventory, output.getvalue(), errors.getvalue()
+
+    def test_readonly_metal_cleanup_preserves_complete_discovery_and_isolation(self):
+        selections, inventory, _, errors = self.discover(OSError(errno.EROFS, "read-only mount", self.mount))
+        self.assertEqual(len(selections), 1)
+        self.assertEqual(inventory, ["CodexBarTests.ExampleTests/testFirst"])
+        self.assertIn("preserving the discovery result", errors)
+        self.assertNotIn(self.home, errors)
+
+    def test_readonly_metal_cleanup_does_not_mask_failed_discovery(self):
+        output, errors = io.StringIO(), io.StringIO()
+        directory = SimpleNamespace(name=self.home, cleanup=Mock(
+            side_effect=OSError(errno.EROFS, "read-only mount", self.mount)))
+        result = subprocess.CompletedProcess(["swift", "test", "list"], 42,
+                                             "discovery stdout marker", "discovery stderr marker")
+        with patch.object(runner.tempfile, "TemporaryDirectory", return_value=directory), \
+                patch.object(runner.subprocess, "run", return_value=result), \
+                patch("sys.stdout", output), patch("sys.stderr", errors):
+            with self.assertRaises(subprocess.CalledProcessError) as failure:
+                runner.swift_test_list(["swift"])
+        self.assertEqual(failure.exception.returncode, 42)
+        self.assertIn("discovery stdout marker", output.getvalue())
+        self.assertIn("discovery stderr marker", errors.getvalue())
+        directory.cleanup.assert_called_once()
+
+    def test_other_cleanup_failures_remain_fatal(self):
+        for code, path in [
+            (errno.EACCES, self.mount),
+            (errno.EROFS, None),
+            (errno.EROFS, self.home + "/Library/Other/read-only"),
+            (errno.EROFS, self.home + "-other/Library/Developer/DVTDownloads/MetalToolchain/mounts/image"),
+            (errno.EROFS, self.mount + "/../../../../../../outside"),
+        ]:
+            with self.subTest(code=code, path=path), self.assertRaises(OSError):
+                self.discover(OSError(code, "unrelated cleanup failure", path))
+
+    def test_command_exception_survives_readonly_metal_cleanup(self):
+        with self.assertRaisesRegex(RuntimeError, "discovery command failed"):
+            self.discover(OSError(errno.EROFS, "read-only mount", self.mount),
+                          command_error=RuntimeError("discovery command failed"))
+
+    def test_normal_cleanup_is_attempted_without_warning(self):
+        _, inventory, _, errors = self.discover(None)
+        self.assertEqual(inventory, ["CodexBarTests.ExampleTests/testFirst"])
+        self.assertEqual(errors, "")
 
 
 class DirectSwiftTestGroupsTests(unittest.TestCase):

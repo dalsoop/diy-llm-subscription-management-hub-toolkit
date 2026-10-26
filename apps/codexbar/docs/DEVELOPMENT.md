@@ -183,6 +183,9 @@ For direct `swift test`, source the script in a Bash subshell first. This does n
 `make test`, `make test-fast`, and `make test-skip-build` also give test discovery and execution a temporary
 `HOME` and `CFFIXED_USER_HOME`, removed when the invocation ends. This keeps incidental default cost-store
 access out of the developer's cache. Direct `swift test` callers must provide their own isolated home.
+Discovery reports a warning if Xcode leaves a read-only Metal toolchain image under that temporary home's
+`Library/Developer/DVTDownloads/MetalToolchain/mounts` directory and cleanup returns `EROFS`. It preserves
+and checks the actual discovery result; other cleanup errors remain fatal. No mount is forcibly detached.
 
 `@ProcessEnvironment` provides count-only descriptions and reflection for stored process-environment dictionaries
 throughout the app, CLI, provider contexts, and session scanners. Use it on every stored environment, including

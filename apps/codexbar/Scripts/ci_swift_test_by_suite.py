@@ -581,13 +581,27 @@ def repair_sparkle_test_runtime(swift_command: list[str], environment: dict[str,
 def swift_test_list(swift_command: list[str], inventory: list[str] | None = None) -> list[TestSelection]:
     command = [*swift_command, "test", "list"]
     # Listing loads test products, so it gets a private home like test execution.
-    with tempfile.TemporaryDirectory(prefix="codexbar-test-discovery-") as home:
+    temporary_home = tempfile.TemporaryDirectory(prefix="codexbar-test-discovery-")
+    try:
+        home = temporary_home.name
         environment = os.environ | {"HOME": home, "CFFIXED_USER_HOME": home}
         result = subprocess.run(command, capture_output=True, text=True, env=environment)
         if result.returncode != 0 and is_missing_sparkle_runtime_failure(result):
             if repair_sparkle_test_runtime(swift_command, environment=environment):
                 print("Recovered SwiftPM Sparkle test runtime; retrying discovery once.", flush=True)
                 result = subprocess.run(command, capture_output=True, text=True, env=environment)
+    finally:
+        try:
+            temporary_home.cleanup()
+        except OSError as error:
+            mounts = (Path(temporary_home.name) / "Library/Developer/DVTDownloads/MetalToolchain/mounts").resolve()
+            if (error.errno != errno.EROFS or error.filename is None
+                    or not Path(error.filename).resolve().is_relative_to(mounts)):
+                raise
+            # Xcode can leave its read-only SDK image mounted inside the isolated home. Preserve the
+            # actual discovery result; all other cleanup errors remain fatal and no mount is forced off.
+            print("Warning: Xcode Metal toolchain mount prevented temporary discovery-home cleanup; "
+                  "preserving the discovery result.", file=sys.stderr, flush=True)
     if result.returncode != 0:
         print(f"+ {swift_command[0]} test list", flush=True)
         if result.stdout:
